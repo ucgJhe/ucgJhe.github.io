@@ -264,7 +264,7 @@ ql.hook_address(dump_reg, 0x41db40) # breakpoint before return
 def my_syscall_sysinfo(ql, sysinfo_info, *args, **kwargs):
     ql.mem.write(sysinfo_info, b&quot;AAAA&quot;) # uptime
     regreturn = 0
-    ql.log.info(f&quot;sysinfo(0x{sysinfo_info:0x2}) = {regreturn}&quot;)
+    ql.log.info(f&quot;sysinfo(0x{sysinfo_info:02x}) = {regreturn}&quot;)
     return regreturn
 
 # dump all registers
