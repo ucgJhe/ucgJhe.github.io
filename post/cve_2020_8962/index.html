@@ -270,9 +270,10 @@ def my_syscall_sysinfo(ql, sysinfo_info, *args, **kwargs):
 
 # dump all registers
 def dump_reg(ql, *args, **kwargs):
+    ql.log.info(&quot;=&quot;*0x10 + &quot; register dump &quot; + &quot;=&quot;*0x10)
     for idx, val in ql.reg.save().items():
         if not isinstance(idx, int):
-            print(idx, &quot;:&quot;, hex(val))
+            ql.log.info(f&quot;{idx}: {hex(val)}&quot;)
             
     breakpoint()
 
@@ -302,10 +303,10 @@ if __name__ == &quot;__main__&quot;:
                 
     ql.set_syscall(&quot;sysinfo&quot;, my_syscall_sysinfo)  # syscall hook for sysinfo
     ql.set_syscall(&quot;_newselect&quot;, lambda *_: None)  # hook syscall _newselect with anonymous NOP function to avoid manual input requirement
-    ql.hook_address(dump_reg, 0x41d3f0)            # breakpoint before return and dump all registers
+    ql.hook_address(dump_reg, 0x41d3f0)            # breakpoint before return and dump all register
 
     with open(&quot;squashfs-root/var/session/c1&quot;, &quot;wb+&quot;) as fh: # setup propper session file
-        fh.write(b&quot;AAAA\x00&quot; + b&quot;A&quot;*0xbf) # first four bytes were the UID in cookie
+        fh.write(b&quot;AAAA\x00&quot; + b&quot;A&quot;*0xbf)                   # first four bytes were the UID in cookie
 
     ql.run()
 </code></pre><p>備註: 因為程式有使用到 <code>select</code> 等待 stdin 輸入，所以用一個空匿名函數取代掉 <code>ql_syscall__newselect</code>，讓 script 可以直接由 <code>Fake_stdin</code> 讀到 input</p>
