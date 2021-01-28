@@ -224,8 +224,8 @@ ql.run()
 <p>通過 <code>man 2 sysinfo</code> 可以知道 <code>struct sysinfo</code> 是 64 bytes 而 uptime 就是前 4 bytes，跟逆向結果一致</p>
 <p><img src="https://i.imgur.com/MqiX9jS.png" alt=""></p>
 <p><img src="https://i.imgur.com/4y0QpbE.png" alt=""></p>
-<p>於是呼，我們需要加入 hook sysinfo function 的相關程式碼</p>
-<pre><code class="language-python3=" data-lang="python3=">def my_syscall_sysinfo(ql, sysinfo_info, *args, **kwargs):
+<p>於此，我們需要加入 hook sysinfo function 的相關程式碼, 並使用 <code>python3 -c 'print(&quot;AAAA\x00&quot;+&quot;A&quot;*0xbf)' &gt; /var/session/c1</code> 建立 <code>/var/session/c1</code></p>
+<pre><code class="language-python=" data-lang="python=">def my_syscall_sysinfo(ql, sysinfo_info, *args, **kwargs):
     ql.mem.write(sysinfo_info, b&quot;AAAA&quot;) # uptime
     regreturn = 0
     ql.nprint(&quot;sysinfo(0x%x) = %d&quot; % (sysinfo_info, regreturn))
