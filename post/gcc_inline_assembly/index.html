@@ -10,12 +10,11 @@
     
     <meta content="Jhe&#39;s blog - 因為想要在 C 裡寫一些組合語言，所以就研究了一下怎麼寫，發現事情並不是像我想的這麼簡單故筆記之。
 GCC 准許我們使用行內組語依照如下格式
-asm(&quot;asm template&quot;	// 組合語言 :output operands //(optional) 輸出運算元 :input operands //(optional) 輸入運算元 :list of clobbered registers //(optional) 被更動的暫存器 組合語言使用雙引號 (&quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外
+asm(&#34;asm template&#34; // 組合語言 	:output operands //(optional) 輸出運算元  :input operands //(optional) 輸入運算元  :list of clobbered registers //(optional) 被更動的暫存器 組合語言使用雙引號 (&quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外
 因為 GCC 將組語一行一行指令當成字串
 以下為簡單範例
-#include &lt;stdio.h&gt; // simple.c int main(void) { int foo=10, bar=5, result; asm(&quot;add ebx, eax&quot;:&quot;=b&quot;(result):&quot;a&quot;(foo), &quot;b&quot;(bar)); printf(&quot;foo &#43; bar = %d\n&quot;, result); return 0; } 範例中 a 就代表 eax, b 表示 ebx 其他以此類推
-然後編譯一下 gcc -o simple simple.c
-然後你就會得到錯誤如下" name="description">
+#include &lt;stdio.h&gt; // simple.cint main(void) { int foo=10, bar=5, result; asm(&#34;add ebx, eax&#34;:&#34;=b&#34;(result):&#34;a&#34;(foo), &#34;b&#34;(bar)); printf(&#34;foo &#43; bar = %d\n&#34;, result); return 0; } 範例中 a 就代表 eax, b 表示 ebx 其他以此類推
+然後編譯一下 gcc -o simple simple." name="description">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     
@@ -124,76 +123,72 @@ layui.use('element', function(){
                 <div class="layui-card-body markdown-body single-content">
                     <p>因為想要在 C 裡寫一些組合語言，所以就研究了一下怎麼寫，發現事情並不是像我想的這麼簡單故筆記之。</p>
 <p>GCC 准許我們使用行內組語依照如下格式</p>
-<pre><code>asm(&quot;asm template&quot;			   	 //           組合語言
-	:output operands             //(optional) 輸出運算元
-    :input operands              //(optional) 輸入運算元
-    :list of clobbered registers //(optional) 被更動的暫存器
-</code></pre><p>組合語言使用雙引號 (&quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">asm</span>(<span style="color:#e6db74">&#34;asm template&#34;</span>               <span style="color:#75715e">//           組合語言
+</span><span style="color:#75715e"></span>	<span style="color:#f92672">:</span>output operands             <span style="color:#75715e">//(optional) 輸出運算元
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">:</span>input operands              <span style="color:#75715e">//(optional) 輸入運算元
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">:</span>list of clobbered registers <span style="color:#75715e">//(optional) 被更動的暫存器
+</span></code></pre></div><p>組合語言使用雙引號 (&quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外</p>
 <p>因為 GCC 將組語一行一行指令當成字串</p>
 <p>以下為簡單範例</p>
-<pre><code>#include &lt;stdio.h&gt; // simple.c
-int main(void) {
-    int foo=10, bar=5, result;
-    asm(&quot;add ebx, eax&quot;:&quot;=b&quot;(result):&quot;a&quot;(foo), &quot;b&quot;(bar));
-    printf(&quot;foo + bar = %d\n&quot;, result);
-    return 0;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt; // simple.c</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">void</span>) {
+    <span style="color:#66d9ef">int</span> foo<span style="color:#f92672">=</span><span style="color:#ae81ff">10</span>, bar<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>, result;
+    <span style="color:#66d9ef">asm</span>(<span style="color:#e6db74">&#34;add ebx, eax&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;=b&#34;</span>(result)<span style="color:#f92672">:</span><span style="color:#e6db74">&#34;a&#34;</span>(foo), <span style="color:#e6db74">&#34;b&#34;</span>(bar));
+    printf(<span style="color:#e6db74">&#34;foo + bar = %d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, result);
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 }
-</code></pre><p>範例中 a 就代表 eax, b 表示 ebx 其他以此類推</p>
+</code></pre></div><p>範例中 a 就代表 eax, b 表示 ebx 其他以此類推</p>
 <p>然後編譯一下
 <code>gcc -o simple simple.c</code></p>
 <p>然後你就會得到錯誤如下</p>
-<p>**
-simple.c Assembler messages :
-**</p>
-<p>**
-simple.c:5: Error: too many memory references for `add’
-**</p>
+<p><strong>simple.c Assembler messages :</strong></p>
+<p><strong>simple.c:5: Error: too many memory references for `add’</strong></p>
 <p>這奇怪的錯誤訊息著實讓人看不懂，其實只是我們使用的是 intel syntax 去寫，可是 GCC 預設的是 AT&amp;T</p>
 <p>所以我們只要給個參數就好 <code>gcc -masm=intel -o simple simple.c</code> 這樣就可以執行無誤了</p>
 <p>當然我們也可以使用 system call</p>
-<pre><code>#include &lt;stdio.h&gt;
-int main(void){
-    asm(
-        &quot;mov eax, 0x1\n\t&quot;
-        &quot;mov ebx, 0x2a\n\t&quot;
-        &quot;int 0x80&quot;);
-    return 0;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">void</span>){
+    <span style="color:#66d9ef">asm</span>(
+        <span style="color:#e6db74">&#34;mov eax, 0x1</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov ebx, 0x2a</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;int 0x80&#34;</span>);
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
 }
-</code></pre><p>一樣編譯並執行之，使用 <code>echo $?</code> 可以看到最後一行指令的 exit code 為 <strong>42</strong> 代表呼叫成功。</p>
+</code></pre></div><p>一樣編譯並執行之，使用 <code>echo $?</code> 可以看到最後一行指令的 exit code 為 <strong>42</strong> 代表呼叫成功。</p>
 <p>所以你其實也可以完完全全在 C 裡寫組語過日子</p>
-<pre><code>//hell.c
-#include &lt;stdio.h&gt;
-
-char *line = &quot;Hello world!\n&quot;;
-/*
-eax = syscall numer
-ebx = unsigned int fd
-ecx = const void *buf
-edx = size_t count
-*/
-void sayHi(){
-    asm(
-        &quot;mov eax, 0x4\n\t&quot;
-        &quot;mov ebx, 0x1\n\t&quot;
-        &quot;mov ecx, %0\n\t&quot;
-        &quot;mov edx, 0xd\n\t&quot;
-        &quot;int 0x80&quot;
-        ::&quot;r&quot;(line):&quot;eax&quot;, &quot;ebx&quot;, &quot;ecx&quot;, &quot;edx&quot;);
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">//hell.c
+</span><span style="color:#75715e"></span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>line <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Hello world!</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>;
+<span style="color:#75715e">/*
+</span><span style="color:#75715e">eax = syscall numer
+</span><span style="color:#75715e">ebx = unsigned int fd
+</span><span style="color:#75715e">ecx = const void *buf
+</span><span style="color:#75715e">edx = size_t count
+</span><span style="color:#75715e">*/</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sayHi</span>(){
+    <span style="color:#66d9ef">asm</span>(
+        <span style="color:#e6db74">&#34;mov eax, 0x4</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov ebx, 0x1</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov ecx, %0</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov edx, 0xd</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;int 0x80&#34;</span>
+        <span style="color:#f92672">::</span><span style="color:#e6db74">&#34;r&#34;</span>(line)<span style="color:#f92672">:</span><span style="color:#e6db74">&#34;eax&#34;</span>, <span style="color:#e6db74">&#34;ebx&#34;</span>, <span style="color:#e6db74">&#34;ecx&#34;</span>, <span style="color:#e6db74">&#34;edx&#34;</span>);
 }
 
-//eax = syscall number, ebx = int error_code
-void exit(){ 
-    asm(
-        &quot;mov eax, 0x1\n\t&quot;
-        &quot;mov ebx, 0x2a\n\t&quot;
-        &quot;int 0x80&quot;);
+<span style="color:#75715e">//eax = syscall number, ebx = int error_code
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">exit</span>(){ 
+    <span style="color:#66d9ef">asm</span>(
+        <span style="color:#e6db74">&#34;mov eax, 0x1</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov ebx, 0x2a</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;int 0x80&#34;</span>);
 }
 
 notmain(){
     echo();
     exit();
 }
-</code></pre><p>我們全部都使用 inline assembly 來撰寫一個 Hello world</p>
+</code></pre></div><p>我們全部都使用 inline assembly 來撰寫一個 Hello world</p>
 <p>其中 “r” 代表 register, 而 %0 代表第一個參數，也就是 input operands 的第一個，也就是 line</p>
 <p>這邊我們編譯的時候略有不同</p>
 <p><code>gcc -c -m32 -fno-builtin -masm=intel hell.c</code></p>

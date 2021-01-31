@@ -148,9 +148,9 @@ jmp  *(GOT+8) # jump 到 runtime_resolver
 <h3 id="lazy-binding">Lazy binding</h3>
 <p>舉個解析 puts 的例子</p>
 <p>解析前的呼叫流程</p>
-<p><img src="https://i.imgur.com/j1JgkFO.png" alt=""></p>
+<p><img src="/images/Lazy_binding_in_ELF/0.png" alt=""></p>
 <p>解析後的呼叫流程</p>
-<p><img src="https://i.imgur.com/PpMYRS9.png" alt=""></p>
+<p><img src="/images/Lazy_binding_in_ELF/1.png" alt=""></p>
 <h3 id="conclusion">Conclusion</h3>
 <p>既然GOT可以在runtime時被修正，那就代表那裏是可讀寫的，可以透過其他弱點改寫GOT，來達到 GOT hijacking，但其實最大的坑是 runtime_resolve &hellip;</p>
 <h3 id="references">References</h3>

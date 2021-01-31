@@ -126,7 +126,7 @@ layui.use('element', function(){
 <p>總體來說先用 SSTI 洩漏 sign cookie 用的 SECRET key，再利用 <code>getattr</code> 函數取出被黑名單的函數來執行就大功告成了，但重點是一般在寫反序列化用的 payload 時一次只能執行一個函數，文章後面介紹如何透過手刻 pickle 的方式來解決這個問題</p>
 <h4 id="pickle">Pickle</h4>
 <p>從 <code>pickle.py</code>、<code>pickletools.py</code> 與官方的文件中可以看到相關說明，Pickle 是一種協定用來將物件序列化為字串，並且有不同版本(0~4)，為了向下相容每個版本的 opcode 意義都相同，只差在新版的協議有較多的 opcode，且 protocol 0 的 opcode 都是可見字元，這邊人工寫的部分主要用這個版本的協定，可以在 <code>pickle.py</code> 中看到這些 opcode</p>
-<p><img src="https://i.imgur.com/O6E5FSn.png" alt=""></p>
+<p><img src="/images/python_pickle/0.png" alt=""></p>
 <p>Pickle 透過 stack 與 memo 來執行，其中 stack 用來呼叫函數與存放參數，而 memo 是一個字典(dict) 結構，用來存放運行中碰到過的物件</p>
 <p>看看從一般序列化物件後 opcode 是如何</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">A</span>(object):
@@ -168,7 +168,7 @@ highest protocol among opcodes <span style="color:#f92672">=</span> <span style=
 <p>每當覺得某個語言的 trick 要窮盡之時，總會有意想不到的驚喜，資安果然是一條需要無盡學的道路</p>
 <h3 id="references">References</h3>
 <ul>
-<li><a href="https://www.tttang.com/archive/1294/">https://www.tttang.com/archive/1294/</a></li>
+<li><a href="https://www.leavesongs.com/PENETRATION/code-breaking-2018-python-sandbox.html">https://www.leavesongs.com/PENETRATION/code-breaking-2018-python-sandbox.html</a></li>
 </ul>
 </div>
             </div>

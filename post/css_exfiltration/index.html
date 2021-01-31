@@ -145,7 +145,7 @@ layui.use('element', function(){
 </ol>
 <p>就是這一個重新渲染的動作，讓我們可以利用一連串的 <code>@import</code> 來將我們要的 payload 分段送達，用以降低複雜度</p>
 <p>假設我們的目標是 id 為 secret 的 value，大致步驟如下</p>
-<p><img src="https://i.imgur.com/hIO9XeZ.png" alt=""></p>
+<p><img src="/images/CSS_Exfiltration/0.png" alt=""></p>
 <p>透過一個 <code>@import</code> 來 <code>@import</code> 另外兩個 css，一個用來維持 <code>@import</code> 鏈，一個用來逐步取得目標字元，這裡需要注意的是要收到 <code>gen.css</code> 的結果之後再將 <code>next.css</code> 回應給目標，即時回應的話會造成死迴圈，永遠都在讀第一個字元，另外兩個 <code>@import</code> 都要帶上參數確保每次發出的 request 是不一樣的，一方面用來辨識目前讀到第幾個字，另一方面避免瀏覽器的 cache 機制切斷利用鏈</p>
 <h3 id="conclusion">Conclusion</h3>
 <p>以 8 位數字的目標為例子，舊方法需要需要產生 <code>P(10, 8) = 10!/2! = 1,814,400</code> 這麼多的 css selector，新的方法每一 round 只要產生 10 個就可以，則總數為 <code>8 x 10 = 80</code>，看起來有一點 stack reading 的既視感。</p>

@@ -35,12 +35,11 @@ LD_PRELOAD 可以讓你預先載入自己的 shared object 檔，如此一來就
       <guid>https://ucgjhe.github.io/post/gcc_inline_assembly/</guid>
       <description>因為想要在 C 裡寫一些組合語言，所以就研究了一下怎麼寫，發現事情並不是像我想的這麼簡單故筆記之。
 GCC 准許我們使用行內組語依照如下格式
-asm(&amp;quot;asm template&amp;quot;	// 組合語言 :output operands //(optional) 輸出運算元 :input operands //(optional) 輸入運算元 :list of clobbered registers //(optional) 被更動的暫存器 組合語言使用雙引號 (&amp;quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外
+asm(&amp;#34;asm template&amp;#34; // 組合語言 	:output operands //(optional) 輸出運算元  :input operands //(optional) 輸入運算元  :list of clobbered registers //(optional) 被更動的暫存器 組合語言使用雙引號 (&amp;quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外
 因為 GCC 將組語一行一行指令當成字串
 以下為簡單範例
-#include &amp;lt;stdio.h&amp;gt; // simple.c int main(void) { int foo=10, bar=5, result; asm(&amp;quot;add ebx, eax&amp;quot;:&amp;quot;=b&amp;quot;(result):&amp;quot;a&amp;quot;(foo), &amp;quot;b&amp;quot;(bar)); printf(&amp;quot;foo + bar = %d\n&amp;quot;, result); return 0; } 範例中 a 就代表 eax, b 表示 ebx 其他以此類推
-然後編譯一下 gcc -o simple simple.c
-然後你就會得到錯誤如下</description>
+#include &amp;lt;stdio.h&amp;gt; // simple.cint main(void) { int foo=10, bar=5, result; asm(&amp;#34;add ebx, eax&amp;#34;:&amp;#34;=b&amp;#34;(result):&amp;#34;a&amp;#34;(foo), &amp;#34;b&amp;#34;(bar)); printf(&amp;#34;foo + bar = %d\n&amp;#34;, result); return 0; } 範例中 a 就代表 eax, b 表示 ebx 其他以此類推
+然後編譯一下 gcc -o simple simple.</description>
     </item>
     
   </channel>
