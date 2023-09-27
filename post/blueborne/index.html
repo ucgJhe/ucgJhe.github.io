@@ -1,0 +1,490 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Jhe&#39;s blog - Blueborne </title>
+    
+    
+    <meta content="CVE, Android, security" name="keywords">
+    
+    <meta content="Jhe&#39;s blog - Blueborne 為 Armis Lab 提出的八個與藍芽相關的 CVE 弱點 此攻擊無須使用者介入(接受藍芽配對、點擊連結、主動發起請求&hellip;)，只需要使用者開啟藍芽功能即可，這聽起來非常高大上好厲害的樣子。
+八個 CVE 及其影響分別如下表
+   CVE 編號 平台 影響     2017-0781 Android DoS or RCE   2017-0782 Android Integer Underflow   2017-0783 Android MiTM   2017-0785 Android Information Leak   2017-8628 Windows MiTM   2017-14315 iOS RCE   2017-1000250 Linux Information Leak   2017-1000251 Linux RCE    Armis Lab 使用 CVE-2017-0781 及 CVE-20170785 來達成 RCE，PoC 在此，下面就描述一下我復現的過程與踩到的坑。" name="description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    
+
+    
+
+    
+
+    
+
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/self/css/default.css">
+    <script src="/layui/layui.js"></script>
+
+    <link rel="stylesheet" async href="/self/css/markdown.min.css">
+    <link rel="stylesheet" async href="/self/css/gallery.css">
+    
+    
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+    <script async src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.0/lazysizes.min.js" integrity="sha256-h2tMEmhemR2IN4wbbdNjj9LaDIjzwk2hralQwfJmBOE=" crossorigin="anonymous"></script></head>
+
+<body>
+    
+    <header class="layui-header layui-bg-cyan">
+
+    
+    
+    <a class="nav-self-logo" href="/">
+        Jhe&#39;s blog
+    </a>
+
+    <ul class="layui-nav layui-layout-right layui-bg-cyan" lay-filter="">
+        
+        
+        <li class="layui-nav-item" id="nav_big"><a href="/post/">Posts</a></li>
+        
+
+        
+
+        
+        <li class="layui-nav-item" id="nav_small">
+            <a href="javascript:;">
+                <i class="layui-icon layui-icon-app" style="font-size: 24px;"></i>
+            </a>
+
+            <dl class="layui-nav-child">
+                
+                <dd><a href="/post/">Posts</a></dd>
+                
+
+                
+            </dl>
+        </li>
+    </ul>
+</header>
+
+<script>
+layui.use('element', function(){
+  var element = layui.element;
+});
+</script>
+        <div id="content" style="min-height:80%">
+<div class="layui-container" style="margin-bottom: 10px">
+    
+
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md8 layui-col-sm12 layui-col-xs12">
+            <div class="layui-card single-card">
+                <br />
+                <blockquote class="self-elem-quote  markdown-body single-title" >
+                    <h1>Blueborne</h1>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2018-11-22</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/android/">
+            <span class="layui-badge " style="vertical-align: 2px;">Android</span>
+        </a>
+    
+    
+</h3>
+                </blockquote>
+                <div class="layui-card-body markdown-body single-content">
+                    <p>Blueborne 為 Armis Lab 提出的八個與藍芽相關的 CVE 弱點
+此攻擊無須使用者介入(接受藍芽配對、點擊連結、主動發起請求&hellip;)，只需要使用者開啟藍芽功能即可，這聽起來非常高大上好厲害的樣子。</p>
+<p>八個 CVE 及其影響分別如下表</p>
+<table>
+<thead>
+<tr>
+<th>CVE 編號</th>
+<th>平台</th>
+<th>影響</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2017-0781</td>
+<td>Android</td>
+<td>DoS or RCE</td>
+</tr>
+<tr>
+<td>2017-0782</td>
+<td>Android</td>
+<td>Integer Underflow</td>
+</tr>
+<tr>
+<td>2017-0783</td>
+<td>Android</td>
+<td>MiTM</td>
+</tr>
+<tr>
+<td>2017-0785</td>
+<td>Android</td>
+<td>Information Leak</td>
+</tr>
+<tr>
+<td>2017-8628</td>
+<td>Windows</td>
+<td>MiTM</td>
+</tr>
+<tr>
+<td>2017-14315</td>
+<td>iOS</td>
+<td>RCE</td>
+</tr>
+<tr>
+<td>2017-1000250</td>
+<td>Linux</td>
+<td>Information Leak</td>
+</tr>
+<tr>
+<td>2017-1000251</td>
+<td>Linux</td>
+<td>RCE</td>
+</tr>
+</tbody>
+</table>
+<p>Armis Lab 使用 <code>CVE-2017-0781</code> 及 <code>CVE-20170785</code> 來達成 RCE，<a href="https://github.com/ArmisSecurity/blueborne/tree/master/android">PoC 在此</a>，下面就描述一下我復現的過程與踩到的坑。</p>
+<p>註：這裡的 RCE 若沒有其他 Information Leak 的弱點配合就只能 DoS</p>
+<h3 id="prerequisite">Prerequisite</h3>
+<ol>
+<li>Google Pixel Android 7.1.2(NJH47F,Aug 2017) rooted</li>
+<li>bluetooth dongle</li>
+<li>Linux-based OS notebook</li>
+</ol>
+<h3 id="cve-2017-0781">CVE-2017-0781</h3>
+<p><img src="/images/blueborne/0.png" alt=""></p>
+<p>由上圖可看到 <code>p_pending_data</code> 為一個 <code>BT_HDR</code> <a href="https://android.googlesource.com/platform/system/bt/+/android-7.1.1_r44/stack/bnep/bnep_int.h#131">型態</a>的指標，但在 <code>mempyc</code> 時卻進行了<code>+1</code> 操作導致 heap overflow 一個 <code>BT_HDR</code> 的<a href="https://android.googlesource.com/platform/system/bt/+/android-7.1.1_r44/stack/include/bt_types.h#197">長度</a>也就是 8 bytes。</p>
+<h3 id="cve-2017-0785">CVE-2017-0785</h3>
+<p><img src="/images/blueborne/1.png" alt=""></p>
+<p><code>ext_len</code> 為攻擊者可控，故可導致 <code>ext_len</code> 整數下溢(Integer underflow)，在之後的程式碼中<code>rem_len</code>被直接使用來指定回應封包長度進而洩漏了記憶體中的資訊。</p>
+<h3 id="exploit">Exploit</h3>
+<p>Android 5.0 之後開始使用<code>jemalloc</code> 相關的 exploit 技巧這裡就先不深究了，Armis lab 的 PoC 已經將這部份都處理好了，只需要將必要的資訊填入即可。</p>
+<p>這裡我使用的實驗機是 Google Pixel 刷原廠 image Android 7.1.2(NJH47F,Aug 2017) 從<a href="https://developers.google.com/android/images">這裡</a>可以找到，並且為了查看 process 的 maps 需要 root，之後大致參考<a href="https://jesux.es/exploiting/blueborne-android-6.0.1-english/">這篇</a>來修改一些必要的 offset，大致步驟如下：</p>
+<ol>
+<li>透過 adb 取得 bluetooth process maps 取得兩比載入位址</li>
+</ol>
+<ul>
+<li>bluetooth.default.so</li>
+<li>libc.so</li>
+</ul>
+<ol start="2">
+<li>透過 <code>CVE-2017-0785</code> 取得記憶體洩漏資訊，多做幾次會發現有一個固定的偏移位址，例如我的 <code>BLUETOOTH_BSS_SOME_VAR_OFFSET</code> 是 <code>0xe3f29</code>、<code>LIBC_SOME_BLX_OFFSET</code> 是 <code>0x1a1c1</code>，該值是否跟手機或是不同libary 有關目前不知道，雖然已經盡量使用與 Armis lab 的 demo 影片相近的環境，但手機中取得的 libc.so 與 bluetooth.default.so hash 值仍然跟他們 PoC 中註解的不相同。</li>
+<li><code>BSS_ACL_REMOTE_NAME_OFFSET</code> 為一個存在 <code>bluetooth.default.so</code> BSS 段的資料，只要是新的 bluetooth 裝置請求配對後，裝置名稱會被 cache 在此，Armis lab 巧妙的使用這個來裝載要執行的 payload，要取得該 offset 可以搭配 <a href="http://gnutoolchains.com/android/">gdbserver</a> 從 <code>bluetooth.default.so</code> 往後開始找。</li>
+<li>雖然攻擊途徑是藍芽，但 RCE 後取得的 reverse shell 必須要走網路而非藍芽，所以目標裝置與攻擊者必須要在同一個網段下。</li>
+</ol>
+<h3 id="conclusion">Conclusion</h3>
+<ol>
+<li>一開始在 root 手機方面卡很久，因為每支手機的官方解鎖步驟都不太一樣所以花了一點時間，但解鎖後才發現這隻手機沒辦法成功 RCE，白皮書中有提到使用藍芽規範中的 JustWorks 可以在無須使用者介入的情況下與目標配對，但某些廠牌的手機這招沒用，手機方面一樣會出現配對提示需要按下確定或拒絕，不確定是否OEM廠有改過相關的 code 的緣故。</li>
+<li>本來開始筆電用 docker 來建攻擊環境，但刷機需要重複開機會導致 USB 連線斷掉後 docker 裡面就接不到裝置了，所以最好都是在本機或是虛擬機上做實驗。</li>
+<li>Armis lab 的 PoC 中偏移需要改到兩個以上的地方但卻是重複操作，這邊我自己改了一點簡化流程詳情看 <a href="https://github.com/ucgJhe/misc/blob/master/android/doit.py">code</a> 做比較就知道了。</li>
+<li>整個攻擊需要複雜的前置準備想要變成一個通用性的攻擊難度非常高。</li>
+<li>Armis lab 的白皮書結圖與影片中手機的版本是不一樣的但應該都可以成功，我是依照影片為主。</li>
+<li>要改的 offset 其實就是 <code>CVE-2017-0785</code> 洩漏出來的值扣掉 <code>libc.so</code> 與 <code>bluetooth.default.so</code> 的載入基址。</li>
+<li>嘗試過自己刷 AOSP 但不知道為毛明明版本都一致卻連 crash 都喇不到。</li>
+<li>這次實驗學到最多的好像是刷機 &hellip;</li>
+</ol>
+<h3 id="references">References</h3>
+<ul>
+<li><a href="https://go.armis.com/hubfs/BlueBorne%20-%20Android%20Exploit%20(20171130).pdf?t=1539983549420">BlueBorne on Android Exploiting an RCE Over the Air</a></li>
+<li><a href="https://www.ms509.com/2017/11/14/blueborne/">Android蓝牙远程命令执行漏洞利用实践:从PoC到exploit
+</a></li>
+<li><a href="https://www.ms509.com/2017/12/22/android-blueborne2/">Android蓝牙远程命令执行漏洞利用实践 exploit优化</a></li>
+<li><a href="https://jesux.es/exploiting/blueborne-android-6.0.1-english/">BlueBorne RCE on Android 6.0.1 (CVE-2017-0781) [English]</a></li>
+<li><a href="https://www.kynetics.com/docs/2018/pairing_agents_bluez/">JustWorks</a></li>
+<li><a href="https://github.com/ojasookert/CVE-2017-0781">CVE-2017-0781 PoC</a></li>
+<li><a href="https://github.com/ojasookert/CVE-2017-0785">CVE-2017-0785 PoC</a></li>
+</ul>
+</div>
+            </div>
+        </div>
+
+        <div class="layui-col-md4 layui-col-sm12 layui-col-xs12">
+            
+            <div class="layui-card single-card">
+                <h2 class="single-title">Relevant Topics</h2>
+                
+                	
+                    <div style="margin-left: 10px;">
+                        <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                            <a href="/post/cve_2017_11610/">
+                                <h3 class="">CVE-2017-11610</h3>
+                            </a>
+                            
+                            <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2018-09-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+    
+</h3>
+                        </blockquote>
+                    </div>
+                	
+                
+                <br />
+            </div>
+            
+
+            <div class="layui-card single-card">
+                <h2 class="single-title">Recent Posts</h2>
+            
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/breakdown_mips_binary_exploit_with_qdb/">
+                        <h3 class="">Breakdown MIPS binary exploit with Qdb</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2021-02-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/qdb/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qdb</span>
+        </a>
+    
+        <a href="/tags/iot/">
+            <span class="layui-badge " style="vertical-align: 2px;">IoT</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/cve_2020_8962/">
+                        <h3 class="">How to reproduce CVE-2020-8962 with Qiling Framework</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2020-07-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/d-link/">
+            <span class="layui-badge " style="vertical-align: 2px;">D-Link</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/elf_symbol_resolving/">
+                        <h3 class="">ELF Symbol Resolving</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-12-12</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/python_pickle/">
+                        <h3 class="">Python Pickle</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+        <a href="/tags/pickle/">
+            <span class="layui-badge " style="vertical-align: 2px;">Pickle</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/lazy_binding_in_elf/">
+                        <h3 class="">Lazy binding in ELF</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-15</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+            
+            <br />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+        </div><footer>
+    
+    
+    <div class="layui-container">
+        <p class="copyright">&copy; All rights reserved. Powered by <a href='https://gohugo.io' style='color:#FFFFFF'>Hugo</a> and <a href='https://github.com/ertuil/erblog' style='color:#FFFFFF'>Erblog</a>.</p>
+    </div>
+</footer>
+</body>
+</html>

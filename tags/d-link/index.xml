@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>D-Link on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/d-link/</link>
+    <description>Recent content in D-Link on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 30 Jul 2020 10:25:15 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/d-link/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How to reproduce CVE-2020-8962 with Qiling Framework</title>
+      <link>https://ucgjhe.github.io/post/cve_2020_8962/</link>
+      <pubDate>Thu, 30 Jul 2020 10:25:15 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/cve_2020_8962/</guid>
+      <description>進行著每天例行的快速新聞瀏覽，偶然看見 CVE-2020-8962 是一個跟 D-Link 有關的漏洞，自從開始貢獻 Qiling Framework 開始就沒少碰過 D-Link 了，於似乎就想重現一下漏洞。
+下載最接近文章中所提及的版本後發現 binwalk 不認得，猜測是韌體被加密了，剛好之前做過一些韌體加解密的筆記，這邊就嘗試看看。
+Firmware decryption 韌體加解密有很多種情境詳細的就不多說了，這篇解釋得很清楚，這邊簡單的總結一下
+   情況 出廠版本 中間版本 最新版本 備註     一 加密0 加密0 加密0 從出廠開始就一直是加密的狀態，且未換過加解密演算法   二 加密0 未加密 加密1 出廠就加密了但廠商突然想要更換加解密演算法   三 未加密 加密0 加密0 出廠時未加密，之後基於某種原因釋出了有加密的版本    由上表可知，第一種情況是最棘手的，但要如何確定除了DIR-842的情況呢? 撇除買一台新機器的選項，由官網提供的韌體下載可以發現DIR-842最舊的版本是沒加密的，看來是中間某一個版本突然加密了，也就是說我們在情況三
+既然是情況三那就好辦了，必定存在一個中間版本是未加密且具有加解密演算法的，除了可以一個一個下載韌體使用 binwalk 暴力測試外，還可以透過 release note 來縮小範圍
+下圖是 DIR-842 RevC 3.13 版的 release note
+裡面提到若要升級到 3.13 版需要先安裝過度版本 v3.092b03_middle
+這裡就得到了關鍵版本的線索，這個過渡版本應該就是未加密且具有加解密演算法的韌體版本</description>
+    </item>
+    
+  </channel>
+</rss>

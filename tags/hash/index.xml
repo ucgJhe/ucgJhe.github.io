@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Hash on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/hash/</link>
+    <description>Recent content in Hash on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 25 Apr 2017 14:32:40 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/hash/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Length extension attack</title>
+      <link>https://ucgjhe.github.io/post/length_extension_attack/</link>
+      <pubDate>Tue, 25 Apr 2017 14:32:40 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/length_extension_attack/</guid>
+      <description>在 CTF 算是常見的 crypto 題型，但是現實生活中卻幾乎沒看過實際應用例子 . . .
+主要受影響的 hash 演算法為 MD5 及 SHA1, 本文以 MD5 為例
+弱點成因  MD5, SHA1 使用同一種壓縮演算法(Merkle–Damgård construction)  利用情境  已知 md5(secret || message) 結果 未知 secret 的前提下，可以計算出 md5(secret || message || append)  原理解析  MD5 會將訊息以 64 bytes 為一個 block 做分區，每個 block 做完 某種複雜的計算 後得到該回合(round) 的狀態值 使用 A, B, C, D 四個 register 儲存䅮一回合的狀態 以 0x80 表示 message 結尾，利用 0x00 padding 直到滿足 len(message) % 64 bytes = 56 bytes 第 57 個 byte 用來表示 message 長度，hex(len(message) * 8) # 以 bit 為單位 用 0x00 補滿直到 64 bytes  攻擊原理  其實所謂的狀態值就是該 block 的 hash 結果，最終的 md5 輸出亦同 每八個 digits 一組以 little endian 方式排列分別賦值給 A, B, C, D padding 到下一個 block 加上額外訊息  PoC #include &amp;lt;stdio.</description>
+    </item>
+    
+  </channel>
+</rss>

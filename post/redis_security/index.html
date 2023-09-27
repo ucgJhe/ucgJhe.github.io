@@ -1,0 +1,439 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Jhe&#39;s blog - Redis Security </title>
+    
+    
+    <meta content="Redis, security" name="keywords">
+    
+    <meta content="Jhe&#39;s blog - Redis 是一個 in-memory 的開源專案，使用 key-value 的形式來儲存資料，常被用來當作資料庫或是 cache 使用，並透過 rdb 與 aof 機制來作到 persistence，rdb 用來存儲資料庫中的資料，而 aof 則是 log 檔，當 appendonly 為 yes 時，會將對 Redis 的操作 log 到 appendonly.aof 檔中。
+預設的 service port 是 6379，版本 &gt;= 3.2.7 之後偵測到指令裡面有 HOST 或是 POST 關鍵字會 abort connection，並且在版本 &gt;= 3.2.0 預設開啟 protected mode，代表當沒有 bind 到任何 IP 位址且沒有密碼要求時，只有 IPv4、IPv6 的 loopback 或 Unix socket 可以訪問該 Redis。
+Exploit 除了 memory corruption 相關的 CVE 弱點外，redis open port 還可以透過以下方式來 exploit" name="description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    
+
+    
+
+    
+
+    
+
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/self/css/default.css">
+    <script src="/layui/layui.js"></script>
+
+    <link rel="stylesheet" async href="/self/css/markdown.min.css">
+    <link rel="stylesheet" async href="/self/css/gallery.css">
+    
+    
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+    <script async src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.0/lazysizes.min.js" integrity="sha256-h2tMEmhemR2IN4wbbdNjj9LaDIjzwk2hralQwfJmBOE=" crossorigin="anonymous"></script></head>
+
+<body>
+    
+    <header class="layui-header layui-bg-cyan">
+
+    
+    
+    <a class="nav-self-logo" href="/">
+        Jhe&#39;s blog
+    </a>
+
+    <ul class="layui-nav layui-layout-right layui-bg-cyan" lay-filter="">
+        
+        
+        <li class="layui-nav-item" id="nav_big"><a href="/post/">Posts</a></li>
+        
+
+        
+
+        
+        <li class="layui-nav-item" id="nav_small">
+            <a href="javascript:;">
+                <i class="layui-icon layui-icon-app" style="font-size: 24px;"></i>
+            </a>
+
+            <dl class="layui-nav-child">
+                
+                <dd><a href="/post/">Posts</a></dd>
+                
+
+                
+            </dl>
+        </li>
+    </ul>
+</header>
+
+<script>
+layui.use('element', function(){
+  var element = layui.element;
+});
+</script>
+        <div id="content" style="min-height:80%">
+<div class="layui-container" style="margin-bottom: 10px">
+    
+
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md8 layui-col-sm12 layui-col-xs12">
+            <div class="layui-card single-card">
+                <br />
+                <blockquote class="self-elem-quote  markdown-body single-title" >
+                    <h1>Redis Security</h1>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-04-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/redis/">
+            <span class="layui-badge " style="vertical-align: 2px;">Redis</span>
+        </a>
+    
+    
+</h3>
+                </blockquote>
+                <div class="layui-card-body markdown-body single-content">
+                    <p>Redis 是一個 in-memory 的開源專案，使用 key-value 的形式來儲存資料，常被用來當作資料庫或是 cache 使用，並透過 rdb 與 aof 機制來作到 persistence，rdb 用來存儲資料庫中的資料，而 aof 則是 log 檔，當 appendonly 為 yes 時，會將對 Redis 的操作 log 到 appendonly.aof 檔中。</p>
+<p>預設的 service port 是 6379，版本 &gt;= 3.2.7 之後偵測到指令裡面有 HOST 或是 POST 關鍵字會 abort connection，並且在版本 &gt;= 3.2.0 預設開啟 protected mode，代表當沒有 bind 到任何 IP 位址且沒有密碼要求時，只有 IPv4、IPv6 的 loopback 或 Unix socket 可以訪問該 Redis。</p>
+<h3 id="exploit">Exploit</h3>
+<p>除了 memory corruption 相關的 CVE 弱點外，redis open port 還可以透過以下方式來 exploit</p>
+<ul>
+<li>SLAVEOF
+<ul>
+<li>可以對資料庫中的資料做任意的改動藉此來改變程式邏輯，但需要知道資料結構</li>
+</ul>
+</li>
+<li>MIGRATE
+<ul>
+<li>可以從目標資料庫取得任意資料，但需要知道資料結構</li>
+</ul>
+</li>
+<li>CONFIG SET
+<ul>
+<li>可以設定資料庫的除存路徑與名稱，可能可以寫 webshell，但需要知道路目標徑且權限為可寫</li>
+<li>當 Redis 是由 root 運行且伺服器上有 SSH 服務時可以考慮將公鑰寫入 <code>authorized_keys</code> 中就可以直接以 root 身份連上</li>
+<li>或是寫入 crontab 檔案來執行任意指令，但對平台有依賴性
+<ul>
+<li>debian 系列可執行的 crontab 權限需要是 <code>0600</code> 但 Redis 寫入會是 <code>0644</code> 且寫入的指令無法解析</li>
+<li>centos 可以成功寫入 crontab 亦可正常解析，其對 crontab 格式要求疑似較為鬆散</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Redis 目前支援兩種傳輸方式</p>
+<ul>
+<li>Plaintext
+<ul>
+<li>使用空格分開指令並用換行符號結尾</li>
+<li><code>SET keyname value\n</code></li>
+</ul>
+</li>
+<li>Custom
+<ul>
+<li>在傳輸的資料中，使用星號表示指令與參數數量，錢字號表示字串長度並以<code>\r\n</code> 區隔與結尾</li>
+<li><code>*3\r\n$3\r\nSET\r\n$7\r\nkeyname\r\n$5\r\nvalue\r\n</code></li>
+</ul>
+</li>
+</ul>
+<p>Redis 中支援不同的 instance 之間互相同步資料，用的是傳統的 Master/Slave 模式，Master 與 Slave 之間的傳輸使用的就是 Redis 本身支援的協定與指令，並沒有特殊傳輸方式。</p>
+<h4 id="rogue-server">Rogue server</h4>
+<p>在找相關資料的時候發現 zeronights.ru 在 2018 時有一篇名為 redis-post-exploitation 的 talk 講述了一種架設 rogue server 來 RCE 的技巧。</p>
+<p>Redis 要求的同步流程如下</p>
+<ul>
+<li><code>PING</code>, 測試目標是否存活
+<ul>
+<li><code>+PONG</code> 回應表示連線正常</li>
+</ul>
+</li>
+<li><code>REPLCONF</code>, 用以傳輸 master 與 slave 之間的複製訊息
+<ul>
+<li><code>+OK</code></li>
+</ul>
+</li>
+<li><code>PSYNC/SYNC &lt;replid&gt;</code>, slave 會開始嘗試與 master 進行 full sync 或 partial sync
+<ul>
+<li><code>+CONTINUE &lt;replid&gt; 0</code></li>
+</ul>
+</li>
+</ul>
+<p>之後就可以透過 rogue server 對 slave 發送任意 Redis 指令，但這中間有一個問題，Redis 之間的同步並不會有指令執行結果，不過可以透過 Redis 中的 <code>SCRIPT DEBUG</code> 模式來解決。</p>
+<p>首先使用 SLAVEOF 指令讓目標 Redis 成為自己 rogue server 的 slave，如此一來便可以對目標 Redis 下任意指令，但是兩個 Redis 同步時並不會顯示指令結果，但 Redis 在 <code>SCRIPT DEBUG</code> 模式時是可以執行 Redis 指令且會有結果顯示的，利用這個 feature 就可以取得 Redis 中的任意資料了。</p>
+<p>解決取得回應問題後，為了要 RCE 還需要用到另外一個 feature，Redis 有開放 <a href="https://github.com/RedisLabs/RedisModulesSDK">RedisModulesSDK</a>供使用者撰寫自己的 Redis module，在<code>PSYNC/SYNC</code>請求階段透過回應 FULLRESYNC 將惡意 SO 檔當成 PAYLOAD 傳給 slave，slave 就會把檔案存成 <code>dump.rdb</code>(這是預設檔名，可能因設定而異)，之後可以透過指令 <code>MODLUE LOAD</code> 來載入該 module，基本上編譯成 SO 又得以載入後就可以為所欲為了。</p>
+<p>但在 Redis 5.0 之後，<code>SCRIPT DEBUG</code> 模式下無法使用 CONFIG 指令，這將導致無法透過 <code>CONFIG GET/SET</code> 取得或更動目標資料庫名稱，從而不知道要去哪裡載入 module。</p>
+<p>這裡有另外一個解法，當 PAYLOAD 還沒完全送達時，Redis 會在目錄下存放一個暫存檔，檔名格式為 <code>temp-&lt;time&gt;.&lt;pid&gt;.rdb</code>，這樣一來只要透過前面取得回應的方式用 TIME 與 INFO SERVER 指令，一樣可以取得 Redis 目前的相關資訊，這樣一來便可以載入該檔案。</p>
+<p>需要注意的是可能因為網路或是傳送指令執行有時間差，載入時可能需要嘗試後面一秒的檔案名稱，另外 pid 是對應 process_id 欄位沒錯，但 <code>SCRIPT DEBUG</code> 模式下的 pid 值與非 <code>SCRIPT DEBUG</code> 模式下的會相差一個整數，可能是因為 fork 出另外一個 process 執行的關係或是跟 OS 相關，純屬猜測尚未釐清。</p>
+<p>exploit 步驟如下</p>
+<ol>
+<li>使用 <code>SLAVEOF</code> 使對方成為 rogue server 的 slave</li>
+<li>透過 <code>SCRIPT DEBUG</code> 取得 time 與 info server 中的 pid</li>
+<li>使用新的連線發起 FULLRESYNC，回應惡意 module 與不正確的長度使對方進入等待</li>
+<li>使用 <code>MODULE LOAD ./temp-&lt;time&gt;.&lt;pid&gt;.rdb</code> 載入惡意 module</li>
+</ol>
+<h3 id="conclusion">Conclusion</h3>
+<p>slide 後面還有提到 Redis cluster 與 Redis sentinel 方面的 exploit 方式，基本上大同小異，自己在寫 PoC 的時候遇到一些坑，像是 pid 問題或是 Redis 4 與 Redis 5 之間使用的協定不同，不過基本上都可以透過 socat 來看兩者間的傳輸資料來釐清問題，然後再讀一下 RedisModuelsSDK 怎麼寫就差不多可以弄出來了。</p>
+<p>slide 最後有提到說有向 Redis 官方回報這些問題，但官方表示 document 寫得很清楚了，如果將 Redis service port 開放出來又沒有任何密碼驗證要求，那本身就已經是危險至極的事情了，所以這不是他們的問題。</p>
+<ul>
+<li>可以考慮的安全設定
+<ul>
+<li>修改 redis.conf
+<ul>
+<li>開啟保護模式 <code>protected-mode yes</code></li>
+<li>限定本機訪問 <code>bind 127.0.0.1</code></li>
+<li>登入時要求密碼 <code>requirepass XXXX</code></li>
+<li>更改預設埠號 <code>port XXXX</code></li>
+<li>將危險 Redis 指令重新命名為空字串，將使得該指令變為不可用 <code>rename-command FLUSHALL &quot;&quot;</code></li>
+</ul>
+</li>
+<li>使用 iptables 設定訪問白名單</li>
+</ul>
+</li>
+</ul>
+<p>最後，在相關的參考資料中都有講到，可以使用 <code>flushall</code> 來提高寫入檔案的成功率(避免其他資料干擾寫入的檔案)，但這將會對目標造成影響，不過 slide 中都沒有相關警告，而且在同步 DB 的過程中亂送東西的話一樣可能導致 redis crash 退出，或是同步之後有其他應用程式對 redis 執行查詢的動作，這一樣會導致出錯而 crash，雖然不是 100% 不會爆炸的 exploit 方式，但提供了另外一種攻擊的思維。</p>
+<h3 id="references">References</h3>
+<ul>
+<li><a href="http://blog.knownsec.com/2015/11/analysis-of-redis-unauthorized-of-expolit/">Redis 未授权访问配合 SSH key 文件利用分析</a></li>
+<li><a href="https://www.leavesongs.com/PENETRATION/write-webshell-via-redis-server.html">利用redis写webshell</a></li>
+<li><a href="https://joychou.org/web/Redis-security.html">善待Redis，远离flushall</a></li>
+<li><a href="https://joychou.org/web/hackredis-enhanced-edition-script.html">Hackredis Enhanced Edition Script</a></li>
+<li><a href="https://2018.zeronights.ru/wp-content/uploads/materials/15-redis-post-exploitation.pdf">redis-post-exploitation</a></li>
+</ul>
+</div>
+            </div>
+        </div>
+
+        <div class="layui-col-md4 layui-col-sm12 layui-col-xs12">
+            
+
+            <div class="layui-card single-card">
+                <h2 class="single-title">Recent Posts</h2>
+            
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/breakdown_mips_binary_exploit_with_qdb/">
+                        <h3 class="">Breakdown MIPS binary exploit with Qdb</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2021-02-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/qdb/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qdb</span>
+        </a>
+    
+        <a href="/tags/iot/">
+            <span class="layui-badge " style="vertical-align: 2px;">IoT</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/cve_2020_8962/">
+                        <h3 class="">How to reproduce CVE-2020-8962 with Qiling Framework</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2020-07-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/d-link/">
+            <span class="layui-badge " style="vertical-align: 2px;">D-Link</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/elf_symbol_resolving/">
+                        <h3 class="">ELF Symbol Resolving</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-12-12</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/python_pickle/">
+                        <h3 class="">Python Pickle</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+        <a href="/tags/pickle/">
+            <span class="layui-badge " style="vertical-align: 2px;">Pickle</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/lazy_binding_in_elf/">
+                        <h3 class="">Lazy binding in ELF</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-15</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+            
+            <br />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+        </div><footer>
+    
+    
+    <div class="layui-container">
+        <p class="copyright">&copy; All rights reserved. Powered by <a href='https://gohugo.io' style='color:#FFFFFF'>Hugo</a> and <a href='https://github.com/ertuil/erblog' style='color:#FFFFFF'>Erblog</a>.</p>
+    </div>
+</footer>
+</body>
+</html>

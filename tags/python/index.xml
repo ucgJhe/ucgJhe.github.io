@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Python on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/python/</link>
+    <description>Recent content in Python on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 30 May 2019 14:59:30 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Python Pickle</title>
+      <link>https://ucgjhe.github.io/post/python_pickle/</link>
+      <pubDate>Thu, 30 May 2019 14:59:30 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/python_pickle/</guid>
+      <description>在 2018 年的時候有一個 Code-breaking Puzzles 挑戰賽，都是 Web 題，使用的語言橫跨 PHP、Nodejs、Java 與 python，用盡各語言的特性及奇技淫巧來解題
+唯一的一題用 Django 出的題目引起了我的興趣，起初環境不知道為什麼架不起來，後來雖然有了 Dockerfile 還是不看太清楚有什麼問題，看了一下設定檔可以猜出大概是反序列化問題，詳細的 write-up 可以在這邊看到
+總體來說先用 SSTI 洩漏 sign cookie 用的 SECRET key，再利用 getattr 函數取出被黑名單的函數來執行就大功告成了，但重點是一般在寫反序列化用的 payload 時一次只能執行一個函數，文章後面介紹如何透過手刻 pickle 的方式來解決這個問題
+Pickle 從 pickle.py、pickletools.py 與官方的文件中可以看到相關說明，Pickle 是一種協定用來將物件序列化為字串，並且有不同版本(0~4)，為了向下相容每個版本的 opcode 意義都相同，只差在新版的協議有較多的 opcode，且 protocol 0 的 opcode 都是可見字元，這邊人工寫的部分主要用這個版本的協定，可以在 pickle.py 中看到這些 opcode
+Pickle 透過 stack 與 memo 來執行，其中 stack 用來呼叫函數與存放參數，而 memo 是一個字典(dict) 結構，用來存放運行中碰到過的物件
+看看從一般序列化物件後 opcode 是如何
+class A(object): def __reduce__(self): return (print, (0, )) 這邊需要注意在 dumps 的時候需要指定 protocol 為 0，否則會使用預設的 protocol 版本</description>
+    </item>
+    
+    <item>
+      <title>CVE-2017-11610</title>
+      <link>https://ucgjhe.github.io/post/cve_2017_11610/</link>
+      <pubDate>Sun, 30 Sep 2018 14:34:37 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/cve_2017_11610/</guid>
+      <description>雖然不是什麼新東西，但覺得有點有趣所以筆記一篇
+Supervisord Supervisord 是一個使用 Python 寫的 C/S 架構的行程管控系統，由 supervisorctl 當 CLI 界面、supervisord 當伺服端，並使用XML-RPC來通訊，預設情況下 supervisord 監聽的是 unix socket，也可以將 listen port 改成 TCP，改成TCP後的預設 port 是 9001。
+分析 先用 vulhub 將弱點環境架起來，完成後進到容器裡查看一下當前運行的行程
+可以發現使用 python 執行了 /usr/local/bin/supervidord 該檔案內容為
+#!/usr/local/bin/python # -*- coding: utf-8 -*- import re import sys from supervisor.supervisord import main if __name__ == &amp;#39;__main__&amp;#39;: sys.argv[0] = re.sub(r&amp;#39;(-script\.pyw?|\.exe)?$&amp;#39;, &amp;#39;&amp;#39;, sys.argv[0]) sys.exit(main()) 查看 supervisord.py 的 main function
+看到 361 行執行 go function 將設定檔帶入 class Supervisor 中，並呼叫 main function</description>
+    </item>
+    
+  </channel>
+</rss>

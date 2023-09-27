@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Hook on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/hook/</link>
+    <description>Recent content in Hook on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 14 Apr 2017 14:29:21 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/hook/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>LD_PRELOAD</title>
+      <link>https://ucgjhe.github.io/post/ld_preload/</link>
+      <pubDate>Fri, 14 Apr 2017 14:29:21 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/ld_preload/</guid>
+      <description>Hook 機制在不同的層面上有不同的作法
+LD_PRELOAD 可以讓你預先載入自己的 shared object 檔，如此一來就可以在某些我們感興趣的 function 動手腳
+// main.c #include &amp;lt;stdio.h&amp;gt; int main(void) { puts(&amp;#34;Hello world!&amp;#34;); return 0; } main.c 是一個很簡單的 hello world 程式，很多初學者的第一個程式範例
+很明顯該程式中只有一個 puts function 也就是我們的目標
+首先透過 man 來查詢 puts 的宣告 man 3 puts
+得知是 int puts(const char *s)
+我們便需要宣告一個跟它一模一樣的 function pointer 來存放
+// hook.c #define _GNU_SOURCE #include &amp;lt;stdio.h&amp;gt;#include &amp;lt;dlfcn.h&amp;gt;#include &amp;lt;string.h&amp;gt; int puts(const char *s) { int *(*old_puts)(const char *msg); old_pust = dlsym(RTLD_NEXT, &amp;#34;puts&amp;#34;); printf(&amp;#34;length of messages: %zu\n&amp;#34;, strlen(s)); return old_puts(s); } $ cc -o main main.</description>
+    </item>
+    
+  </channel>
+</rss>

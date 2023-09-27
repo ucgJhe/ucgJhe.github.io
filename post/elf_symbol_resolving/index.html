@@ -1,0 +1,686 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Jhe&#39;s blog - ELF Symbol Resolving </title>
+    
+    
+    <meta content="ELF, security" name="keywords">
+    
+    <meta content="Jhe&#39;s blog - 這邊其實可以當成是 Lazy binding 的後篇，在 Lazy binding in ELF 中，只講到表層觀察到的現象
+也就是 GOT、PLT 等相交互的運作，但細部的如 function 是如何被&quot;找&quot;到的還是一個黑盒子
+這邊試著一步步用gdb手解一次並且留個紀錄
+Lab. 為了用 gdb 方便追蹤，這邊用自己編譯的 glibc
+實驗環境我用的是 ubuntu:16.04 in docker，下面是概略建置過程
+apt update apt install -y wget gcc-multilib gawk make libgetopt-complete-perl gdb vim wget https://ftp.gnu.org/gnu/libc/glibc-2.19.tar.gz tar zxvf glibc-2.19.tar.gz cd glibc-2.19.tar.gz &amp;&amp; mkdir build32 &amp;&amp; mkdir 32 cd build32 CC=&quot;gcc -m32&quot; CXX=&quot;g&#43;&#43; -m32&quot; CFLAGS=&quot;-g -g3 -ggdb -gdwarf-4 -Og&quot; CXXFLAGS=&quot;-g -g3 -ggdb -gdwarf-4 -Og&quot; ../configure --prefix=/root/glibc-2.19/32 --host=i686-linux-gnu make &amp;&amp; make install 下面是實驗使用到的 binary source code" name="description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    
+
+    
+
+    
+
+    
+
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/self/css/default.css">
+    <script src="/layui/layui.js"></script>
+
+    <link rel="stylesheet" async href="/self/css/markdown.min.css">
+    <link rel="stylesheet" async href="/self/css/gallery.css">
+    
+    
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+    <script async src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.0/lazysizes.min.js" integrity="sha256-h2tMEmhemR2IN4wbbdNjj9LaDIjzwk2hralQwfJmBOE=" crossorigin="anonymous"></script></head>
+
+<body>
+    
+    <header class="layui-header layui-bg-cyan">
+
+    
+    
+    <a class="nav-self-logo" href="/">
+        Jhe&#39;s blog
+    </a>
+
+    <ul class="layui-nav layui-layout-right layui-bg-cyan" lay-filter="">
+        
+        
+        <li class="layui-nav-item" id="nav_big"><a href="/post/">Posts</a></li>
+        
+
+        
+
+        
+        <li class="layui-nav-item" id="nav_small">
+            <a href="javascript:;">
+                <i class="layui-icon layui-icon-app" style="font-size: 24px;"></i>
+            </a>
+
+            <dl class="layui-nav-child">
+                
+                <dd><a href="/post/">Posts</a></dd>
+                
+
+                
+            </dl>
+        </li>
+    </ul>
+</header>
+
+<script>
+layui.use('element', function(){
+  var element = layui.element;
+});
+</script>
+        <div id="content" style="min-height:80%">
+<div class="layui-container" style="margin-bottom: 10px">
+    
+
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md8 layui-col-sm12 layui-col-xs12">
+            <div class="layui-card single-card">
+                <br />
+                <blockquote class="self-elem-quote  markdown-body single-title" >
+                    <h1>ELF Symbol Resolving</h1>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-12-12</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                </blockquote>
+                <div class="layui-card-body markdown-body single-content">
+                    <p>這邊其實可以當成是 Lazy binding 的後篇，在 Lazy binding in ELF 中，只講到表層觀察到的現象</p>
+<p>也就是 GOT、PLT 等相交互的運作，但細部的如 function 是如何被&quot;找&quot;到的還是一個黑盒子</p>
+<p>這邊試著一步步用gdb手解一次並且留個紀錄</p>
+<h3 id="lab">Lab.</h3>
+<p>為了用 gdb 方便追蹤，這邊用自己編譯的 glibc</p>
+<p>實驗環境我用的是 ubuntu:16.04 in docker，下面是概略建置過程</p>
+<pre tabindex="0"><code>apt update
+
+apt install -y wget gcc-multilib gawk make libgetopt-complete-perl gdb vim
+
+wget https://ftp.gnu.org/gnu/libc/glibc-2.19.tar.gz
+
+tar zxvf glibc-2.19.tar.gz
+
+cd glibc-2.19.tar.gz &amp;&amp; mkdir build32 &amp;&amp; mkdir 32
+
+cd build32
+
+CC=&quot;gcc -m32&quot; CXX=&quot;g++ -m32&quot; CFLAGS=&quot;-g -g3 -ggdb -gdwarf-4 -Og&quot; CXXFLAGS=&quot;-g -g3 -ggdb -gdwarf-4 -Og&quot; ../configure --prefix=/root/glibc-2.19/32 --host=i686-linux-gnu
+
+make &amp;&amp; make install
+</code></pre><p>下面是實驗使用到的 binary source code</p>
+<pre tabindex="0"><code>/* hello.c */
+#include &lt;stdio.h&gt;
+
+int main(void) {
+	puts(&quot;Hello, world!&quot;);
+	return 0;
+}
+
+// gcc -g -m32 -Wl,--dynamic-linker=/root/glibc-2.19/32/lib/ld-2.19.so,--rpath=/root/glibc-2.19/32/lib hello.c -o hello
+</code></pre><h3 id="elf-header">ELF Header</h3>
+<p>既然我們的目標是 function 怎麼被找到的，則必然要知道 ELF 中有哪些資料可以參考</p>
+<pre tabindex="0"><code>p/x *(Elf32_Ehdr*)0x8048000
+
+$1 = {
+  e_ident = {0x7f, 0x45, 0x4c, 0x46, 0x1, 0x1, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, 
+  e_type = 0x2, 
+  e_machine = 0x3, 
+  e_version = 0x1, 
+  e_entry = 0x8048340, 
+  e_phoff = 0x34, 
+  e_shoff = 0x1a48, 
+  e_flags = 0x0, 
+  e_ehsize = 0x34, 
+  e_phentsize = 0x20, 
+  e_phnum = 0x9, 
+  e_shentsize = 0x28, 
+  e_shnum = 0x24, 
+  e_shstrndx = 0x21
+}
+</code></pre><p>上面內容可以對應到 <code>readelf -h hello</code>，這邊主要看 <code>e_phoff</code> 表示 program header table 的位址 offset 是多少，其次 <code>e_phnum</code> 表示 program header 的數量</p>
+<p>有了這兩個資訊之後就可以找到 program header table 了</p>
+<pre tabindex="0"><code>p/x *(Elf32_Phdr*)(0x8048000+0x34)@9
+
+$2 = ...
+  {
+    p_type = 0x2, 
+    p_offset = 0xf0c, 
+    p_vaddr = 0x8049f0c, 
+    p_paddr = 0x8049f0c, 
+    p_filesz = 0xf0, 
+    p_memsz = 0xf0, 
+    p_flags = 0x6, 
+    p_align = 0x4
+  } ...
+</code></pre><p>這邊要找 <code>p_type</code> 為 <code>PT_DYNAMI</code> 的 program header 也就是 <code>2</code></p>
+<p><code>p_vaddr</code> 就表示了他的位址，其實就是 <code>p_offset + 0x8048000</code></p>
+<h3 id="dynamic-section">.dynamic Section</h3>
+<p><code>.dynamic section</code> 是由 <code>Elf32_Dyn</code> 所組成的陣列</p>
+<p>下面 gdb 指令印出的列表，就是 <code>readelf -d a.out</code> 的輸出結果對應</p>
+<p>Tag Type 對應 d_tag、Name/Value 對應 d_val 或是 d_ptr</p>
+<pre tabindex="0"><code>p/x *(Elf32_Dyn*)0x8049f0c@20
+
+$3 = ...
+  {
+    d_tag = 0x5, 
+    d_un = {
+      d_val = 0x804822c, 
+      d_ptr = 0x804822c
+    }
+  }, {
+    d_tag = 0x6, 
+    d_un = {
+      d_val = 0x80481dc, 
+      d_ptr = 0x80481dc
+    }
+  },
+  ...
+  {
+    d_tag = 0x17, 
+    d_un = {
+      d_val = 0x80482c0, 
+      d_ptr = 0x80482c0
+    }
+  ...
+  }}
+  
+set $dynstr = (char*)0x804822c
+set $dynsym = (Elf32_Sym*)0x80481dc
+set $rel = (Elf32_Rel*)0x80482c0
+</code></pre><p>這邊只列出會用到的部分</p>
+<ul>
+<li>d_tag = DT_STRTAB(0x5)
+<ul>
+<li>String Table(<code>.dynstr</code>)</li>
+</ul>
+</li>
+<li>d_tag = DT_SYMTAB(0x6)
+<ul>
+<li>Symbol Table(<code>.dynsym</code>)</li>
+</ul>
+</li>
+<li>d_tag =  DT_JMPREL(0x17)
+<ul>
+<li>Relocation Table(<code>.rel.plt</code>)</li>
+</ul>
+</li>
+</ul>
+<h3 id="relplt">.rel.plt</h3>
+<p>在 <a href="https://ucgjhe.github.io/posts/2019/05/15/lazy-binding-in-elf/">Lazy binding in ELF</a> 提過，第一次 function call 會優先跳到 <code>PLT[0]</code> 去執行</p>
+<pre tabindex="0"><code>PLT[0]：
+push *(GOT + 4)
+jmp  *(GOT + 8)
+
+foo@plt：
+jmp   *(foo@GOT)
+push  n         # .got.plt+0x6
+jmp   PLT[0]
+</code></pre><p><code>push n</code> 做的是將 function index 壓入 stack 中， n 就表示第幾個 relocation entry</p>
+<p>在這個例子中 <code>puts</code> 的 n = 0</p>
+<pre tabindex="0"><code>p/x $rel[0]
+
+$4 = {
+  r_offset = 0x804a00c, 
+  r_info = 0x107
+}
+</code></pre><ul>
+<li><code>r_offset</code>
+<ul>
+<li>function 位址在哪，也是在第一次 function call 後會被修正的地方</li>
+</ul>
+</li>
+<li><code>r_info</code>
+<ul>
+<li>由 Relocation type 與 symbol index 組成</li>
+<li>Relocation type = r_info &amp; 0xff</li>
+<li>symbol index = r_info &raquo; 8</li>
+</ul>
+</li>
+<li>內容可以對應到 <code>readelf -r hello</code></li>
+</ul>
+<p>symbol index 就代表他在 <code>.dynsym</code> 是第幾個 symbol entry</p>
+<h3 id="dynsym-section">.dynsym Section</h3>
+<p>由 relocation table(<code>.rel.plt</code>)知道 <code>puts</code> 的 symbol index 是 1</p>
+<p>則可以找到 <code>st_name</code>、<code>st_value</code> 等關鍵訊息</p>
+<pre tabindex="0"><code>p/x $dynsym[1]
+
+$5 = {
+  st_name = 0x1a, 
+  st_value = 0x0, 
+  st_size = 0x0, 
+  st_info = 0x12, 
+  st_other = 0x0, 
+  st_shndx = 0x0
+}
+</code></pre><ul>
+<li><code>st_name</code>
+<ul>
+<li>在 String Table(<code>.dynstr</code>)中的 offset</li>
+</ul>
+</li>
+<li><code>st_value</code>
+<ul>
+<li>function address</li>
+<li>這邊會是空的因為是 binary 本身的 <code>.dynsym</code></li>
+</ul>
+</li>
+<li>
+<ul>
+<li>內容可以對應到 <code>readelf -s hello</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="dynstr-section">.dynstr Section</h3>
+<p>有了 <code>st_name</code> 之後就可以查到 function name 了</p>
+<pre tabindex="0"><code>p/s $dynstr + $dynsym[1].st_name
+
+$6 = 0x8048246 &quot;puts&quot;
+</code></pre><h3 id="link_map">link_map</h3>
+<p>知道要找的 function 是 <code>puts</code> 後，就來到重頭戲了</p>
+<p>先回憶一下 <code>PLT[0]</code> 做的兩件事情</p>
+<pre tabindex="0"><code>PLT[0]：
+push *(GOT + 4)
+jmp  *(GOT + 8)
+</code></pre><ol>
+<li>將 link_map 壓入 stack</li>
+<li>跳到 _dl_runtime_resolve</li>
+</ol>
+<p>整個運作像是下圖</p>
+<p><img src="https://i.imgur.com/k2Mp7bR.png" alt=""></p>
+<p>這邊的 <code>reloc_arg</code> 就是前面講的 n</p>
+<p>如同之前提過的 link_map 是一個講 binary 有用到的 library 串起來的 linked_list</p>
+<p>所以<a href="https://code.woboq.org/userspace/glibc/elf/link.h.html#84">結構</a>也非常的龐大，這邊講幾個重要的屬性</p>
+<ul>
+<li><code>l_next</code>
+<ul>
+<li>指向下一個 library</li>
+</ul>
+</li>
+<li><code>l_name</code>
+<ul>
+<li>該 library 的 path</li>
+</ul>
+</li>
+<li><code>l_addr</code>
+<ul>
+<li>library 的載入位址</li>
+</ul>
+</li>
+<li><code>l_info</code>
+<ul>
+<li><code>l_info[x]</code> 指向 d_tag = x 的欄位</li>
+</ul>
+</li>
+</ul>
+<p>link_map 第一層是 binary 自己的</p>
+<p>在這個例子中，要走兩層才會取到 libc</p>
+<pre tabindex="0"><code>p/x *(struct link_map*)0xf7f2e920
+
+$7 = {
+  l_addr = 0x0, 
+  l_name = 0xf7f2ec0c, 
+  l_ld = 0x8049f0c, 
+  l_next = 0xf7f2ec10, 
+  l_prev = 0x0, 
+  l_real = 0xf7f2e920, 
+  l_ns = 0x0, 
+  l_libname = 0xf7f2ec00, ...
+
+set $libc = ((struct link_map*)0xf7f2e920).l_next.l_next
+</code></pre><p>最後要在 libc 裡面找到 <code>puts</code> 這個 function</p>
+<p>首先要先用 <code>gnu_hash</code> 取得 <code>puts</code> 的 hash，下面是 python 版的 <code>gnu_hash</code></p>
+<pre tabindex="0"><code>def hash(s):
+    h = 5381
+    
+    for x in s:
+        h = (h * 33 + ord(x)) &amp; 0xffffffff
+        
+    return h
+    
+prin(hex(hash('puts'))) # '0x7c9c7b11'
+</code></pre><p>知道 hash 為 <code>0x7c9c7b11</code> 後要到 hash table 中找，關鍵程式碼如下</p>
+<pre tabindex="0"><code>char *hash = gnu_hash(SYMBOL_NAME);
+int b = l_gnu_buckets[hash % l_nbuckets];
+int i = b;
+do {
+    if (((l_gnu_chain_zero[i] ^ hash) &gt;&gt; 1) == 0)
+        goto found_it;
+    i++;
+} while (l_gnu_chain_zero[i] &amp; 1 == 0)
+</code></pre><p>其中 <code>l_gnu_buckets</code>、<code>l_nbuckets</code>、<code>l_gnu_chain_zero</code> 都存在 link_map 中</p>
+<pre tabindex="0"><code>set $hash = 0x7c9c7b11
+set $l_nbuckets = $libc.l_nbuckets
+set $l_gnu_buckets = $libc.l_gnu_buckets
+set $l_gnu_chain_zero = $libc.l_gnu_chain_zero
+
+set $b = $l_gnu_buckets[$hash % $l_nbuckets]
+
+p/x $b
+
+$8 = 0x1ac
+</code></pre><p>之後就從 0x1ac 的地方開始找</p>
+<pre tabindex="0"><code>x/12wx &amp;$l_gnu_chain_zero[$b]
+
+0xf7d5c01c:	0x4551669e	`0x7c9c7b11`	0x0af3842d	0xa0396ff6
+0xf7d5c02c:	0xaae48db4	0xf87e677d	0x9587f726	0xfc489dc3
+0xf7d5c03c:	0x7c96e576	0x45f5d55c	0x7c9c7b15	0x04e475f0
+</code></pre><p>這邊可以看到，我們要找的 hash 就躺在 0xf7d5c01c+4 的地方，所以找到的位置是 0x1ad</p>
+<p>雖然 hash 一樣了但是還是要 check 一次 <code>st_name</code> 是否相等，避免 collision</p>
+<p>之後就照搬前面講得如何得到 function name 的方法一樣</p>
+<p>只不過對象換成 libc 而非 binary 本身</p>
+<pre tabindex="0"><code>set $dynstr2 = (char*)$libc.l_info[5].d_un.d_val
+set $dynsym2 = (Elf32_Sym*)$libc.l_info[6].d_un.d_val
+p/s $dynstr2 + $dynsym2[0x1ad].st_name
+
+$9 = 0xf7d68338 &quot;puts&quot;
+
+x/i $libc.l_addr +$dynsym2[0x1ad].st_value
+
+   0xf7dbbf0e &lt;_IO_puts&gt;:	push   ebp
+</code></pre><p>上面先從 libc 的 link_map 中透過 <code>l_info</code> 取得 libc 的 <code>.dynstr</code> 及 <code>.dynsym</code></p>
+<p>並確定該 symbol index 的 <code>st_name</code> 是 <code>puts</code> 沒錯</p>
+<p>最後就是透過 libc 的 <code>l_addr</code> 加上 offset 取得 <code>puts</code> 本人在 libc 裡的位址</p>
+<p>最後的最後該位址將被回填到 $rel[0].r_offset 的位置，也就是 <a href="mailto:puts@got.plt">puts@got.plt</a></p>
+<p>等到下次該 function 又被呼叫時，就會直接跳到 libc 裡的實作惹</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>走了一大段路，總算是大致了解 symbol resolve 的過程，這也不是第一次嘗試理解了，貌似時間久了又會忘記，就又走了一次原路&hellip;</p>
+<p>上面的實驗跟紀錄都是 x86 binary 但 x64 有些許不同，跟之後的 exploit 一併提吧</p>
+<h3 id="references">References</h3>
+<ul>
+<li><a href="http://rk700.github.io/2015/08/09/return-to-dl-resolve/">http://rk700.github.io/2015/08/09/return-to-dl-resolve/</a></li>
+<li><a href="https://www.youtube.com/watch?v=wsIvqd9YqTI">https://www.youtube.com/watch?v=wsIvqd9YqTI</a></li>
+<li><a href="https://code.woboq.org/userspace/glibc/elf/elf.h.html">https://code.woboq.org/userspace/glibc/elf/elf.h.html</a></li>
+<li><a href="https://www.slideshare.net/AngelBoy1/re2dlresolve">https://www.slideshare.net/AngelBoy1/re2dlresolve</a></li>
+</ul>
+</div>
+            </div>
+        </div>
+
+        <div class="layui-col-md4 layui-col-sm12 layui-col-xs12">
+            
+            <div class="layui-card single-card">
+                <h2 class="single-title">Relevant Topics</h2>
+                
+                	
+                    <div style="margin-left: 10px;">
+                        <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                            <a href="/post/lazy_binding_in_elf/">
+                                <h3 class="">Lazy binding in ELF</h3>
+                            </a>
+                            
+                            <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-15</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                        </blockquote>
+                    </div>
+                	
+                
+                <br />
+            </div>
+            
+
+            <div class="layui-card single-card">
+                <h2 class="single-title">Recent Posts</h2>
+            
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/breakdown_mips_binary_exploit_with_qdb/">
+                        <h3 class="">Breakdown MIPS binary exploit with Qdb</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2021-02-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/qdb/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qdb</span>
+        </a>
+    
+        <a href="/tags/iot/">
+            <span class="layui-badge " style="vertical-align: 2px;">IoT</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/cve_2020_8962/">
+                        <h3 class="">How to reproduce CVE-2020-8962 with Qiling Framework</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2020-07-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/d-link/">
+            <span class="layui-badge " style="vertical-align: 2px;">D-Link</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/elf_symbol_resolving/">
+                        <h3 class="">ELF Symbol Resolving</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-12-12</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/python_pickle/">
+                        <h3 class="">Python Pickle</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+        <a href="/tags/pickle/">
+            <span class="layui-badge " style="vertical-align: 2px;">Pickle</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/lazy_binding_in_elf/">
+                        <h3 class="">Lazy binding in ELF</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-15</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+            
+            <br />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+        </div><footer>
+    
+    
+    <div class="layui-container">
+        <p class="copyright">&copy; All rights reserved. Powered by <a href='https://gohugo.io' style='color:#FFFFFF'>Hugo</a> and <a href='https://github.com/ertuil/erblog' style='color:#FFFFFF'>Erblog</a>.</p>
+    </div>
+</footer>
+</body>
+</html>

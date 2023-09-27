@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>WinRAR on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/winrar/</link>
+    <description>Recent content in WinRAR on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 27 Feb 2019 14:42:41 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/winrar/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>CVE-2018-20250</title>
+      <link>https://ucgjhe.github.io/post/cve_2018_20250/</link>
+      <pubDate>Wed, 27 Feb 2019 14:42:41 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/cve_2018_20250/</guid>
+      <description>這幾天到處都看到在講這個藏了 19 年的 Winrar 洞，於似乎跟風復現一波
+問題出現在 WinRAR 在解壓縮 WinACE 檔的時候使用的 unacev2.dll 處理有問題
+導致 Path Traversal，攻擊者可以將檔案放到任意目錄下(有權限且路徑存在的話)
+Lab. 復現步驟如下:
+ 使用 WinACE 軟體壓縮一個檔案，檔名要夠長(重寫用到，否則檔案大小會有問題) 壓縮的時候要選 store full path 使用任意 hex editor 將路徑名稱改成自己想要的 使用 acefile.py --headers FILE，他會很好心的跟你說你的 CRC 錯惹，應該是多少 將 CRC 改成正確的值 使用 WinRAR 解壓縮該檔案  文中提到他們找到一個 SMB attack vector，也就是說又找到了一種方式拿 NTLM hash 就對了
+或是使用類似 ../../ 這種方式來把檔案放到你想要的地方，相關的分析前因後果，文章中都有這就不細講了
+Conclusion 更新至 WinRAR 5.7 beta 之後的版本即可免於危害
+References  Extracting a 19 Year Old Code Execution from WinRAR WinRAR目录穿越神洞复现及防御  </description>
+    </item>
+    
+  </channel>
+</rss>

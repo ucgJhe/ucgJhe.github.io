@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Linux on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/linux/</link>
+    <description>Recent content in Linux on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 15 Apr 2019 14:51:02 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/linux/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Ptrace on Linux</title>
+      <link>https://ucgjhe.github.io/post/ptrace_on_linux/</link>
+      <pubDate>Mon, 15 Apr 2019 14:51:02 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/ptrace_on_linux/</guid>
+      <description>一直都有想要寫相關的紀錄但一直都沒有時間，直到又看到類似應用的工具才想到把之前想要紀錄的通通寫上來
+ptrace 在 Linux 上是一個強大的存在，允許一個 process 除錯另外一個 process，像是 GDB 就是基於 ptrace 來運作的
+How 看到了有人分享類似 sudohulk、sudo_inject 這種工具， 起初看到描述的時候覺得很神，於是去看了 code 了解一下原理，終究發現是需要使用 ptrace 來達到這種效果，但仍然受限於 Yama Security Module，可以透過更改kernel.yama.ptrace_scope的數值來決定 ptrace 可以附加的對象，數值及對應效果如下表
+   數值 效果     0 只要有相同的 uid，所有的 process 都可以被 debug   1 只有 parent process 可以 debug 自己的 child process   2 只有管理者可以用 ptrace，需要有 CAP_SYS_PTRACE 能力   3 沒有 process 可以被 ptrace，啟用後就改不回來了(root 也不行)除非重開機    在我慣用的 Linux 發行版裡 (Arch, Ubuntu) 預設至少都有 1，難道有發行版預設是 0 ?</description>
+    </item>
+    
+    <item>
+      <title>PHP 繞過 disable_functions 踩坑記</title>
+      <link>https://ucgjhe.github.io/post/bypass_disable_functions/</link>
+      <pubDate>Sat, 05 Jan 2019 14:40:22 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/bypass_disable_functions/</guid>
+      <description>最近看到很多文章講到 bypass PHP disable functions 的文章，但其實這也不是什麼新的東西了
+很久以前就蒐集到過不少相關的文章，印象中最早從現在已經萬年維修的 wooyun drops 看到相關文章
+當然也已經有整理很齊全的github，於似乎就順手整理相關資料順便重現一波
+Lab. 文章提到想要繞過 PHP 的 disable funtioncs 大概有四種方法
+ 可能有一些沒 disable 到的漏網之魚 透過第三方程式弱點像是 ImageMagick 或 Shellshock 等等 apache 啟用了 mod_cgi 並且允許覆蓋 .htaccess 透過設定環境變數 LD_PRELOAD 來 hijack 系統層級函式  這篇踩坑記主要在第四點上
+根據 wooyun drops 的文章來看，中心思想就是使用 putenv 設定 LD_PRELOAD
+然後使用 mail 函數會用到系統 sendmail binary 的特性導致 function hijack，進而
+繞過 PHP 的 disable functions，但缺點是你必須要覆蓋到會使用到的 function
+否則就無法觸發，而 freebuf 的這篇 无需sendmail：巧用LD_PRELOAD突破disable_functions
+提到使用編譯器提供的 attribute 屬性來優先執行，這樣就可以無需覆蓋到任何函數一樣可以達到效果
+甚至系統最後沒有 sendmail 也無妨，在這一次重現中，主要測試了兩個運行方法，PHP CLI 與</description>
+    </item>
+    
+    <item>
+      <title>LD_PRELOAD</title>
+      <link>https://ucgjhe.github.io/post/ld_preload/</link>
+      <pubDate>Fri, 14 Apr 2017 14:29:21 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/ld_preload/</guid>
+      <description>Hook 機制在不同的層面上有不同的作法
+LD_PRELOAD 可以讓你預先載入自己的 shared object 檔，如此一來就可以在某些我們感興趣的 function 動手腳
+// main.c #include &amp;lt;stdio.h&amp;gt; int main(void) { puts(&amp;#34;Hello world!&amp;#34;); return 0; } main.c 是一個很簡單的 hello world 程式，很多初學者的第一個程式範例
+很明顯該程式中只有一個 puts function 也就是我們的目標
+首先透過 man 來查詢 puts 的宣告 man 3 puts
+得知是 int puts(const char *s)
+我們便需要宣告一個跟它一模一樣的 function pointer 來存放
+// hook.c #define _GNU_SOURCE #include &amp;lt;stdio.h&amp;gt;#include &amp;lt;dlfcn.h&amp;gt;#include &amp;lt;string.h&amp;gt; int puts(const char *s) { int *(*old_puts)(const char *msg); old_pust = dlsym(RTLD_NEXT, &amp;#34;puts&amp;#34;); printf(&amp;#34;length of messages: %zu\n&amp;#34;, strlen(s)); return old_puts(s); } $ cc -o main main.</description>
+    </item>
+    
+  </channel>
+</rss>

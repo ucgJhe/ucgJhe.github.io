@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Redis on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/redis/</link>
+    <description>Recent content in Redis on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 01 Apr 2019 14:47:44 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/redis/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Redis Security</title>
+      <link>https://ucgjhe.github.io/post/redis_security/</link>
+      <pubDate>Mon, 01 Apr 2019 14:47:44 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/redis_security/</guid>
+      <description>Redis 是一個 in-memory 的開源專案，使用 key-value 的形式來儲存資料，常被用來當作資料庫或是 cache 使用，並透過 rdb 與 aof 機制來作到 persistence，rdb 用來存儲資料庫中的資料，而 aof 則是 log 檔，當 appendonly 為 yes 時，會將對 Redis 的操作 log 到 appendonly.aof 檔中。
+預設的 service port 是 6379，版本 &amp;gt;= 3.2.7 之後偵測到指令裡面有 HOST 或是 POST 關鍵字會 abort connection，並且在版本 &amp;gt;= 3.2.0 預設開啟 protected mode，代表當沒有 bind 到任何 IP 位址且沒有密碼要求時，只有 IPv4、IPv6 的 loopback 或 Unix socket 可以訪問該 Redis。
+Exploit 除了 memory corruption 相關的 CVE 弱點外，redis open port 還可以透過以下方式來 exploit</description>
+    </item>
+    
+  </channel>
+</rss>

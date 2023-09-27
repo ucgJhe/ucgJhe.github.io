@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>PHP on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/php/</link>
+    <description>Recent content in PHP on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 05 Jan 2019 14:40:22 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/php/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>PHP 繞過 disable_functions 踩坑記</title>
+      <link>https://ucgjhe.github.io/post/bypass_disable_functions/</link>
+      <pubDate>Sat, 05 Jan 2019 14:40:22 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/bypass_disable_functions/</guid>
+      <description>最近看到很多文章講到 bypass PHP disable functions 的文章，但其實這也不是什麼新的東西了
+很久以前就蒐集到過不少相關的文章，印象中最早從現在已經萬年維修的 wooyun drops 看到相關文章
+當然也已經有整理很齊全的github，於似乎就順手整理相關資料順便重現一波
+Lab. 文章提到想要繞過 PHP 的 disable funtioncs 大概有四種方法
+ 可能有一些沒 disable 到的漏網之魚 透過第三方程式弱點像是 ImageMagick 或 Shellshock 等等 apache 啟用了 mod_cgi 並且允許覆蓋 .htaccess 透過設定環境變數 LD_PRELOAD 來 hijack 系統層級函式  這篇踩坑記主要在第四點上
+根據 wooyun drops 的文章來看，中心思想就是使用 putenv 設定 LD_PRELOAD
+然後使用 mail 函數會用到系統 sendmail binary 的特性導致 function hijack，進而
+繞過 PHP 的 disable functions，但缺點是你必須要覆蓋到會使用到的 function
+否則就無法觸發，而 freebuf 的這篇 无需sendmail：巧用LD_PRELOAD突破disable_functions
+提到使用編譯器提供的 attribute 屬性來優先執行，這樣就可以無需覆蓋到任何函數一樣可以達到效果
+甚至系統最後沒有 sendmail 也無妨，在這一次重現中，主要測試了兩個運行方法，PHP CLI 與</description>
+    </item>
+    
+  </channel>
+</rss>

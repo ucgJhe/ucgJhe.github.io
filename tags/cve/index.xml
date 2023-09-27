@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>CVE on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/cve/</link>
+    <description>Recent content in CVE on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 30 Jul 2020 10:25:15 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/cve/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>How to reproduce CVE-2020-8962 with Qiling Framework</title>
+      <link>https://ucgjhe.github.io/post/cve_2020_8962/</link>
+      <pubDate>Thu, 30 Jul 2020 10:25:15 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/cve_2020_8962/</guid>
+      <description>進行著每天例行的快速新聞瀏覽，偶然看見 CVE-2020-8962 是一個跟 D-Link 有關的漏洞，自從開始貢獻 Qiling Framework 開始就沒少碰過 D-Link 了，於似乎就想重現一下漏洞。
+下載最接近文章中所提及的版本後發現 binwalk 不認得，猜測是韌體被加密了，剛好之前做過一些韌體加解密的筆記，這邊就嘗試看看。
+Firmware decryption 韌體加解密有很多種情境詳細的就不多說了，這篇解釋得很清楚，這邊簡單的總結一下
+   情況 出廠版本 中間版本 最新版本 備註     一 加密0 加密0 加密0 從出廠開始就一直是加密的狀態，且未換過加解密演算法   二 加密0 未加密 加密1 出廠就加密了但廠商突然想要更換加解密演算法   三 未加密 加密0 加密0 出廠時未加密，之後基於某種原因釋出了有加密的版本    由上表可知，第一種情況是最棘手的，但要如何確定除了DIR-842的情況呢? 撇除買一台新機器的選項，由官網提供的韌體下載可以發現DIR-842最舊的版本是沒加密的，看來是中間某一個版本突然加密了，也就是說我們在情況三
+既然是情況三那就好辦了，必定存在一個中間版本是未加密且具有加解密演算法的，除了可以一個一個下載韌體使用 binwalk 暴力測試外，還可以透過 release note 來縮小範圍
+下圖是 DIR-842 RevC 3.13 版的 release note
+裡面提到若要升級到 3.13 版需要先安裝過度版本 v3.092b03_middle
+這裡就得到了關鍵版本的線索，這個過渡版本應該就是未加密且具有加解密演算法的韌體版本</description>
+    </item>
+    
+    <item>
+      <title>CVE-2018-20250</title>
+      <link>https://ucgjhe.github.io/post/cve_2018_20250/</link>
+      <pubDate>Wed, 27 Feb 2019 14:42:41 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/cve_2018_20250/</guid>
+      <description>這幾天到處都看到在講這個藏了 19 年的 Winrar 洞，於似乎跟風復現一波
+問題出現在 WinRAR 在解壓縮 WinACE 檔的時候使用的 unacev2.dll 處理有問題
+導致 Path Traversal，攻擊者可以將檔案放到任意目錄下(有權限且路徑存在的話)
+Lab. 復現步驟如下:
+ 使用 WinACE 軟體壓縮一個檔案，檔名要夠長(重寫用到，否則檔案大小會有問題) 壓縮的時候要選 store full path 使用任意 hex editor 將路徑名稱改成自己想要的 使用 acefile.py --headers FILE，他會很好心的跟你說你的 CRC 錯惹，應該是多少 將 CRC 改成正確的值 使用 WinRAR 解壓縮該檔案  文中提到他們找到一個 SMB attack vector，也就是說又找到了一種方式拿 NTLM hash 就對了
+或是使用類似 ../../ 這種方式來把檔案放到你想要的地方，相關的分析前因後果，文章中都有這就不細講了
+Conclusion 更新至 WinRAR 5.7 beta 之後的版本即可免於危害
+References  Extracting a 19 Year Old Code Execution from WinRAR WinRAR目录穿越神洞复现及防御  </description>
+    </item>
+    
+    <item>
+      <title>Blueborne</title>
+      <link>https://ucgjhe.github.io/post/blueborne/</link>
+      <pubDate>Thu, 22 Nov 2018 14:38:27 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/blueborne/</guid>
+      <description>Blueborne 為 Armis Lab 提出的八個與藍芽相關的 CVE 弱點 此攻擊無須使用者介入(接受藍芽配對、點擊連結、主動發起請求&amp;hellip;)，只需要使用者開啟藍芽功能即可，這聽起來非常高大上好厲害的樣子。
+八個 CVE 及其影響分別如下表
+   CVE 編號 平台 影響     2017-0781 Android DoS or RCE   2017-0782 Android Integer Underflow   2017-0783 Android MiTM   2017-0785 Android Information Leak   2017-8628 Windows MiTM   2017-14315 iOS RCE   2017-1000250 Linux Information Leak   2017-1000251 Linux RCE    Armis Lab 使用 CVE-2017-0781 及 CVE-20170785 來達成 RCE，PoC 在此，下面就描述一下我復現的過程與踩到的坑。</description>
+    </item>
+    
+    <item>
+      <title>CVE-2017-11610</title>
+      <link>https://ucgjhe.github.io/post/cve_2017_11610/</link>
+      <pubDate>Sun, 30 Sep 2018 14:34:37 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/cve_2017_11610/</guid>
+      <description>雖然不是什麼新東西，但覺得有點有趣所以筆記一篇
+Supervisord Supervisord 是一個使用 Python 寫的 C/S 架構的行程管控系統，由 supervisorctl 當 CLI 界面、supervisord 當伺服端，並使用XML-RPC來通訊，預設情況下 supervisord 監聽的是 unix socket，也可以將 listen port 改成 TCP，改成TCP後的預設 port 是 9001。
+分析 先用 vulhub 將弱點環境架起來，完成後進到容器裡查看一下當前運行的行程
+可以發現使用 python 執行了 /usr/local/bin/supervidord 該檔案內容為
+#!/usr/local/bin/python # -*- coding: utf-8 -*- import re import sys from supervisor.supervisord import main if __name__ == &amp;#39;__main__&amp;#39;: sys.argv[0] = re.sub(r&amp;#39;(-script\.pyw?|\.exe)?$&amp;#39;, &amp;#39;&amp;#39;, sys.argv[0]) sys.exit(main()) 查看 supervisord.py 的 main function
+看到 361 行執行 go function 將設定檔帶入 class Supervisor 中，並呼叫 main function</description>
+    </item>
+    
+  </channel>
+</rss>

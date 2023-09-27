@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>JWT on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/jwt/</link>
+    <description>Recent content in JWT on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 03 Apr 2017 14:26:47 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/jwt/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>JWT</title>
+      <link>https://ucgjhe.github.io/post/jwt/</link>
+      <pubDate>Mon, 03 Apr 2017 14:26:47 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/jwt/</guid>
+      <description>JOSE(JSON Object Signing and Encryption) 定義了一系列的 RFC 標準
+目前有：
+ JSON Web Signature JSON Web Encryption JSON Web Key JSON Web Algorithm JSON Web Token  JWT (JSON Web Token) 算是集前面大成者(?)
+詳細的介紹可以看這裡，這邊直接從 JWT 切入
+每個 JWT 稱為一個 claim，每個 claim 組成為分別為 header.payload.signature (注意它使用 &amp;lsquo;.&amp;rsquo; 來虛隔三者)
+Header
+{ &amp;#34;typ&amp;#34;: &amp;#34;JWT&amp;#34;, &amp;#34;alg&amp;#34;: &amp;#34;HS256&amp;#34; } typ 代表使用 JWT
+alg 代表signature 演算法使用 HS256
+Payload
+{ &amp;#34;iss&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;sub&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;aud&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;exp&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;nbf&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;iat&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;jti&amp;#34;: &amp;#34;&amp;#34; } payload 中的 data 有明確的欄位定義</description>
+    </item>
+    
+  </channel>
+</rss>

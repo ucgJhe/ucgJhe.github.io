@@ -1,0 +1,424 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Jhe&#39;s blog - GCC Inline Assembly </title>
+    
+    
+    <meta content="asm, c, misc" name="keywords">
+    
+    <meta content="Jhe&#39;s blog - 因為想要在 C 裡寫一些組合語言，所以就研究了一下怎麼寫，發現事情並不是像我想的這麼簡單故筆記之。
+GCC 准許我們使用行內組語依照如下格式
+asm(&#34;asm template&#34; // 組合語言 	:output operands //(optional) 輸出運算元  :input operands //(optional) 輸入運算元  :list of clobbered registers //(optional) 被更動的暫存器 組合語言使用雙引號 (&quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外
+因為 GCC 將組語一行一行指令當成字串
+以下為簡單範例
+#include &lt;stdio.h&gt; // simple.cint main(void) { int foo=10, bar=5, result; asm(&#34;add ebx, eax&#34;:&#34;=b&#34;(result):&#34;a&#34;(foo), &#34;b&#34;(bar)); printf(&#34;foo &#43; bar = %d\n&#34;, result); return 0; } 範例中 a 就代表 eax, b 表示 ebx 其他以此類推
+然後編譯一下 gcc -o simple simple." name="description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    
+
+    
+
+    
+
+    
+
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/self/css/default.css">
+    <script src="/layui/layui.js"></script>
+
+    <link rel="stylesheet" async href="/self/css/markdown.min.css">
+    <link rel="stylesheet" async href="/self/css/gallery.css">
+    
+    
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+    <script async src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.0/lazysizes.min.js" integrity="sha256-h2tMEmhemR2IN4wbbdNjj9LaDIjzwk2hralQwfJmBOE=" crossorigin="anonymous"></script></head>
+
+<body>
+    
+    <header class="layui-header layui-bg-cyan">
+
+    
+    
+    <a class="nav-self-logo" href="/">
+        Jhe&#39;s blog
+    </a>
+
+    <ul class="layui-nav layui-layout-right layui-bg-cyan" lay-filter="">
+        
+        
+        <li class="layui-nav-item" id="nav_big"><a href="/post/">Posts</a></li>
+        
+
+        
+
+        
+        <li class="layui-nav-item" id="nav_small">
+            <a href="javascript:;">
+                <i class="layui-icon layui-icon-app" style="font-size: 24px;"></i>
+            </a>
+
+            <dl class="layui-nav-child">
+                
+                <dd><a href="/post/">Posts</a></dd>
+                
+
+                
+            </dl>
+        </li>
+    </ul>
+</header>
+
+<script>
+layui.use('element', function(){
+  var element = layui.element;
+});
+</script>
+        <div id="content" style="min-height:80%">
+<div class="layui-container" style="margin-bottom: 10px">
+    
+
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md8 layui-col-sm12 layui-col-xs12">
+            <div class="layui-card single-card">
+                <br />
+                <blockquote class="self-elem-quote  markdown-body single-title" >
+                    <h1>GCC Inline Assembly</h1>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2017-03-26</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/misc/">
+            <span class="layui-badge " style="vertical-align: 2px;">misc</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/asm/">
+            <span class="layui-badge " style="vertical-align: 2px;">asm</span>
+        </a>
+    
+        <a href="/tags/c/">
+            <span class="layui-badge " style="vertical-align: 2px;">c</span>
+        </a>
+    
+    
+</h3>
+                </blockquote>
+                <div class="layui-card-body markdown-body single-content">
+                    <p>因為想要在 C 裡寫一些組合語言，所以就研究了一下怎麼寫，發現事情並不是像我想的這麼簡單故筆記之。</p>
+<p>GCC 准許我們使用行內組語依照如下格式</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#66d9ef">asm</span>(<span style="color:#e6db74">&#34;asm template&#34;</span>               <span style="color:#75715e">//           組合語言
+</span><span style="color:#75715e"></span>	<span style="color:#f92672">:</span>output operands             <span style="color:#75715e">//(optional) 輸出運算元
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">:</span>input operands              <span style="color:#75715e">//(optional) 輸入運算元
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">:</span>list of clobbered registers <span style="color:#75715e">//(optional) 被更動的暫存器
+</span></code></pre></div><p>組合語言使用雙引號 (&quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外</p>
+<p>因為 GCC 將組語一行一行指令當成字串</p>
+<p>以下為簡單範例</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt; // simple.c</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">void</span>) {
+    <span style="color:#66d9ef">int</span> foo<span style="color:#f92672">=</span><span style="color:#ae81ff">10</span>, bar<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>, result;
+    <span style="color:#66d9ef">asm</span>(<span style="color:#e6db74">&#34;add ebx, eax&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;=b&#34;</span>(result)<span style="color:#f92672">:</span><span style="color:#e6db74">&#34;a&#34;</span>(foo), <span style="color:#e6db74">&#34;b&#34;</span>(bar));
+    printf(<span style="color:#e6db74">&#34;foo + bar = %d</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>, result);
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>範例中 a 就代表 eax, b 表示 ebx 其他以此類推</p>
+<p>然後編譯一下
+<code>gcc -o simple simple.c</code></p>
+<p>然後你就會得到錯誤如下</p>
+<p><strong>simple.c Assembler messages :</strong></p>
+<p><strong>simple.c:5: Error: too many memory references for `add’</strong></p>
+<p>這奇怪的錯誤訊息著實讓人看不懂，其實只是我們使用的是 intel syntax 去寫，可是 GCC 預設的是 AT&amp;T</p>
+<p>所以我們只要給個參數就好 <code>gcc -masm=intel -o simple simple.c</code> 這樣就可以執行無誤了</p>
+<p>當然我們也可以使用 system call</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">int</span> <span style="color:#a6e22e">main</span>(<span style="color:#66d9ef">void</span>){
+    <span style="color:#66d9ef">asm</span>(
+        <span style="color:#e6db74">&#34;mov eax, 0x1</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov ebx, 0x2a</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;int 0x80&#34;</span>);
+    <span style="color:#66d9ef">return</span> <span style="color:#ae81ff">0</span>;
+}
+</code></pre></div><p>一樣編譯並執行之，使用 <code>echo $?</code> 可以看到最後一行指令的 exit code 為 <strong>42</strong> 代表呼叫成功。</p>
+<p>所以你其實也可以完完全全在 C 裡寫組語過日子</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#75715e">//hell.c
+</span><span style="color:#75715e"></span><span style="color:#75715e">#include</span> <span style="color:#75715e">&lt;stdio.h&gt;</span><span style="color:#75715e">
+</span><span style="color:#75715e"></span>
+<span style="color:#66d9ef">char</span> <span style="color:#f92672">*</span>line <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Hello world!</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>;
+<span style="color:#75715e">/*
+</span><span style="color:#75715e">eax = syscall numer
+</span><span style="color:#75715e">ebx = unsigned int fd
+</span><span style="color:#75715e">ecx = const void *buf
+</span><span style="color:#75715e">edx = size_t count
+</span><span style="color:#75715e">*/</span>
+<span style="color:#66d9ef">void</span> <span style="color:#a6e22e">sayHi</span>(){
+    <span style="color:#66d9ef">asm</span>(
+        <span style="color:#e6db74">&#34;mov eax, 0x4</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov ebx, 0x1</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov ecx, %0</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov edx, 0xd</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;int 0x80&#34;</span>
+        <span style="color:#f92672">::</span><span style="color:#e6db74">&#34;r&#34;</span>(line)<span style="color:#f92672">:</span><span style="color:#e6db74">&#34;eax&#34;</span>, <span style="color:#e6db74">&#34;ebx&#34;</span>, <span style="color:#e6db74">&#34;ecx&#34;</span>, <span style="color:#e6db74">&#34;edx&#34;</span>);
+}
+
+<span style="color:#75715e">//eax = syscall number, ebx = int error_code
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">void</span> <span style="color:#a6e22e">exit</span>(){ 
+    <span style="color:#66d9ef">asm</span>(
+        <span style="color:#e6db74">&#34;mov eax, 0x1</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;mov ebx, 0x2a</span><span style="color:#ae81ff">\n\t</span><span style="color:#e6db74">&#34;</span>
+        <span style="color:#e6db74">&#34;int 0x80&#34;</span>);
+}
+
+notmain(){
+    echo();
+    exit();
+}
+</code></pre></div><p>我們全部都使用 inline assembly 來撰寫一個 Hello world</p>
+<p>其中 “r” 代表 register, 而 %0 代表第一個參數，也就是 input operands 的第一個，也就是 line</p>
+<p>這邊我們編譯的時候略有不同</p>
+<p><code>gcc -c -m32 -fno-builtin -masm=intel hell.c</code></p>
+<p><code>ld -static -m elf_i386 -e notmain -o hell hell.o</code></p>
+<ul>
+<li>-fno-builtin 參數表示我們不使用內建的函式</li>
+<li>-c 代表只編譯不連結</li>
+<li>-m32 代表該程式要編譯成 32 位元</li>
+<li>-m elf_i386 同上原因</li>
+<li>-static 使用靜態連結</li>
+<li>-e notmain 可以將程式的入口，由預設的 _start 改為 notmain</li>
+</ul>
+<p>大致上簡單的 inline assembly 就是如此了，不過這些都只是冰山一角<br>
+還有更多的東西可以挖掘在<a href="http://asm.sourceforge.net/articles/rmiyagi-inline-asm.txt">這裡</a> 跟 <a href="https://gcc.gnu.org/onlinedocs/gcc-4.2.4/gcc/Extended-Asm.html#Extended-Asm">這裡</a></p>
+</div>
+            </div>
+        </div>
+
+        <div class="layui-col-md4 layui-col-sm12 layui-col-xs12">
+            
+
+            <div class="layui-card single-card">
+                <h2 class="single-title">Recent Posts</h2>
+            
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/breakdown_mips_binary_exploit_with_qdb/">
+                        <h3 class="">Breakdown MIPS binary exploit with Qdb</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2021-02-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/qdb/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qdb</span>
+        </a>
+    
+        <a href="/tags/iot/">
+            <span class="layui-badge " style="vertical-align: 2px;">IoT</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/cve_2020_8962/">
+                        <h3 class="">How to reproduce CVE-2020-8962 with Qiling Framework</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2020-07-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/d-link/">
+            <span class="layui-badge " style="vertical-align: 2px;">D-Link</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/elf_symbol_resolving/">
+                        <h3 class="">ELF Symbol Resolving</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-12-12</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/python_pickle/">
+                        <h3 class="">Python Pickle</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+        <a href="/tags/pickle/">
+            <span class="layui-badge " style="vertical-align: 2px;">Pickle</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/lazy_binding_in_elf/">
+                        <h3 class="">Lazy binding in ELF</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-15</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+            
+            <br />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+        </div><footer>
+    
+    
+    <div class="layui-container">
+        <p class="copyright">&copy; All rights reserved. Powered by <a href='https://gohugo.io' style='color:#FFFFFF'>Hugo</a> and <a href='https://github.com/ertuil/erblog' style='color:#FFFFFF'>Erblog</a>.</p>
+    </div>
+</footer>
+</body>
+</html>

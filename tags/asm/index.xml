@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>asm on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/asm/</link>
+    <description>Recent content in asm on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 26 Mar 2017 14:18:34 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/asm/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>GCC Inline Assembly</title>
+      <link>https://ucgjhe.github.io/post/gcc_inline_assembly/</link>
+      <pubDate>Sun, 26 Mar 2017 14:18:34 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/gcc_inline_assembly/</guid>
+      <description>因為想要在 C 裡寫一些組合語言，所以就研究了一下怎麼寫，發現事情並不是像我想的這麼簡單故筆記之。
+GCC 准許我們使用行內組語依照如下格式
+asm(&amp;#34;asm template&amp;#34; // 組合語言 	:output operands //(optional) 輸出運算元  :input operands //(optional) 輸入運算元  :list of clobbered registers //(optional) 被更動的暫存器 組合語言使用雙引號 (&amp;quot;) 包住，若為多行組語則須在結尾加上 \n\t 最後一行除外
+因為 GCC 將組語一行一行指令當成字串
+以下為簡單範例
+#include &amp;lt;stdio.h&amp;gt; // simple.cint main(void) { int foo=10, bar=5, result; asm(&amp;#34;add ebx, eax&amp;#34;:&amp;#34;=b&amp;#34;(result):&amp;#34;a&amp;#34;(foo), &amp;#34;b&amp;#34;(bar)); printf(&amp;#34;foo + bar = %d\n&amp;#34;, result); return 0; } 範例中 a 就代表 eax, b 表示 ebx 其他以此類推
+然後編譯一下 gcc -o simple simple.</description>
+    </item>
+    
+  </channel>
+</rss>

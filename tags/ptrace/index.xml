@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Ptrace on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/ptrace/</link>
+    <description>Recent content in Ptrace on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 15 Apr 2019 14:51:02 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/ptrace/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Ptrace on Linux</title>
+      <link>https://ucgjhe.github.io/post/ptrace_on_linux/</link>
+      <pubDate>Mon, 15 Apr 2019 14:51:02 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/ptrace_on_linux/</guid>
+      <description>一直都有想要寫相關的紀錄但一直都沒有時間，直到又看到類似應用的工具才想到把之前想要紀錄的通通寫上來
+ptrace 在 Linux 上是一個強大的存在，允許一個 process 除錯另外一個 process，像是 GDB 就是基於 ptrace 來運作的
+How 看到了有人分享類似 sudohulk、sudo_inject 這種工具， 起初看到描述的時候覺得很神，於是去看了 code 了解一下原理，終究發現是需要使用 ptrace 來達到這種效果，但仍然受限於 Yama Security Module，可以透過更改kernel.yama.ptrace_scope的數值來決定 ptrace 可以附加的對象，數值及對應效果如下表
+   數值 效果     0 只要有相同的 uid，所有的 process 都可以被 debug   1 只有 parent process 可以 debug 自己的 child process   2 只有管理者可以用 ptrace，需要有 CAP_SYS_PTRACE 能力   3 沒有 process 可以被 ptrace，啟用後就改不回來了(root 也不行)除非重開機    在我慣用的 Linux 發行版裡 (Arch, Ubuntu) 預設至少都有 1，難道有發行版預設是 0 ?</description>
+    </item>
+    
+  </channel>
+</rss>

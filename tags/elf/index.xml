@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ELF on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/elf/</link>
+    <description>Recent content in ELF on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 12 Dec 2019 15:02:07 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/elf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>ELF Symbol Resolving</title>
+      <link>https://ucgjhe.github.io/post/elf_symbol_resolving/</link>
+      <pubDate>Thu, 12 Dec 2019 15:02:07 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/elf_symbol_resolving/</guid>
+      <description>這邊其實可以當成是 Lazy binding 的後篇，在 Lazy binding in ELF 中，只講到表層觀察到的現象
+也就是 GOT、PLT 等相交互的運作，但細部的如 function 是如何被&amp;quot;找&amp;quot;到的還是一個黑盒子
+這邊試著一步步用gdb手解一次並且留個紀錄
+Lab. 為了用 gdb 方便追蹤，這邊用自己編譯的 glibc
+實驗環境我用的是 ubuntu:16.04 in docker，下面是概略建置過程
+apt update apt install -y wget gcc-multilib gawk make libgetopt-complete-perl gdb vim wget https://ftp.gnu.org/gnu/libc/glibc-2.19.tar.gz tar zxvf glibc-2.19.tar.gz cd glibc-2.19.tar.gz &amp;amp;&amp;amp; mkdir build32 &amp;amp;&amp;amp; mkdir 32 cd build32 CC=&amp;quot;gcc -m32&amp;quot; CXX=&amp;quot;g++ -m32&amp;quot; CFLAGS=&amp;quot;-g -g3 -ggdb -gdwarf-4 -Og&amp;quot; CXXFLAGS=&amp;quot;-g -g3 -ggdb -gdwarf-4 -Og&amp;quot; ../configure --prefix=/root/glibc-2.19/32 --host=i686-linux-gnu make &amp;amp;&amp;amp; make install 下面是實驗使用到的 binary source code</description>
+    </item>
+    
+    <item>
+      <title>Lazy binding in ELF</title>
+      <link>https://ucgjhe.github.io/post/lazy_binding_in_elf/</link>
+      <pubDate>Wed, 15 May 2019 14:58:16 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/lazy_binding_in_elf/</guid>
+      <description>ELF binary 透過 PLT(Procedure Linkage Table) 與 GOT(Global Offset Table) 達到延遲繫結來減少編譯所消耗的時間
+基本上就是在 runtime 需要用到該函數時，再將該函數&amp;quot;找&amp;quot;出來
+Global Offset Table GOT 分為兩部分 .got 與 .got.plt
+前者用來存放全域變數引用位置，後者存放函式引用位置
+.got.plt 前三項有特別用途
+ .dynamic 位置 link_map  有引用到的 libary 串成的 linked list   dl_runtime_resolve  後面的就是其他函式，未修正的話位址會指向 PLT 表的第二條指令
+已修正過後就會直接指向正確的函式位址
+Procedure Linkage Table PLT 是由程式中有用到的函式組成的表
+開頭的 PLT[0] 由兩條指令組成
+push *(GOT+4) # 將 link_map 壓入 stack jmp *(GOT+8) # jump 到 runtime_resolver 結束之後就會將正確的函式位址寫回 .got.plt
+Lazy binding 舉個解析 puts 的例子</description>
+    </item>
+    
+  </channel>
+</rss>

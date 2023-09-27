@@ -1,0 +1,439 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Jhe&#39;s blog - PHP 繞過 disable_functions 踩坑記 </title>
+    
+    
+    <meta content="PHP, Linux, security" name="keywords">
+    
+    <meta content="Jhe&#39;s blog - 最近看到很多文章講到 bypass PHP disable functions 的文章，但其實這也不是什麼新的東西了
+很久以前就蒐集到過不少相關的文章，印象中最早從現在已經萬年維修的 wooyun drops 看到相關文章
+當然也已經有整理很齊全的github，於似乎就順手整理相關資料順便重現一波
+Lab. 文章提到想要繞過 PHP 的 disable funtioncs 大概有四種方法
+ 可能有一些沒 disable 到的漏網之魚 透過第三方程式弱點像是 ImageMagick 或 Shellshock 等等 apache 啟用了 mod_cgi 並且允許覆蓋 .htaccess 透過設定環境變數 LD_PRELOAD 來 hijack 系統層級函式  這篇踩坑記主要在第四點上
+根據 wooyun drops 的文章來看，中心思想就是使用 putenv 設定 LD_PRELOAD
+然後使用 mail 函數會用到系統 sendmail binary 的特性導致 function hijack，進而
+繞過 PHP 的 disable functions，但缺點是你必須要覆蓋到會使用到的 function
+否則就無法觸發，而 freebuf 的這篇 无需sendmail：巧用LD_PRELOAD突破disable_functions
+提到使用編譯器提供的 attribute 屬性來優先執行，這樣就可以無需覆蓋到任何函數一樣可以達到效果
+甚至系統最後沒有 sendmail 也無妨，在這一次重現中，主要測試了兩個運行方法，PHP CLI 與" name="description">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    
+
+    
+
+    
+
+    
+
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <link rel="stylesheet" href="/self/css/default.css">
+    <script src="/layui/layui.js"></script>
+
+    <link rel="stylesheet" async href="/self/css/markdown.min.css">
+    <link rel="stylesheet" async href="/self/css/gallery.css">
+    
+    
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous">
+    <script async src="https://cdn.jsdelivr.net/npm/lazysizes@5.2.0/lazysizes.min.js" integrity="sha256-h2tMEmhemR2IN4wbbdNjj9LaDIjzwk2hralQwfJmBOE=" crossorigin="anonymous"></script></head>
+
+<body>
+    
+    <header class="layui-header layui-bg-cyan">
+
+    
+    
+    <a class="nav-self-logo" href="/">
+        Jhe&#39;s blog
+    </a>
+
+    <ul class="layui-nav layui-layout-right layui-bg-cyan" lay-filter="">
+        
+        
+        <li class="layui-nav-item" id="nav_big"><a href="/post/">Posts</a></li>
+        
+
+        
+
+        
+        <li class="layui-nav-item" id="nav_small">
+            <a href="javascript:;">
+                <i class="layui-icon layui-icon-app" style="font-size: 24px;"></i>
+            </a>
+
+            <dl class="layui-nav-child">
+                
+                <dd><a href="/post/">Posts</a></dd>
+                
+
+                
+            </dl>
+        </li>
+    </ul>
+</header>
+
+<script>
+layui.use('element', function(){
+  var element = layui.element;
+});
+</script>
+        <div id="content" style="min-height:80%">
+<div class="layui-container" style="margin-bottom: 10px">
+    
+
+    <div class="layui-row layui-col-space10">
+        <div class="layui-col-md8 layui-col-sm12 layui-col-xs12">
+            <div class="layui-card single-card">
+                <br />
+                <blockquote class="self-elem-quote  markdown-body single-title" >
+                    <h1>PHP 繞過 disable_functions 踩坑記</h1>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-01-05</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/php/">
+            <span class="layui-badge " style="vertical-align: 2px;">PHP</span>
+        </a>
+    
+        <a href="/tags/linux/">
+            <span class="layui-badge " style="vertical-align: 2px;">Linux</span>
+        </a>
+    
+    
+</h3>
+                </blockquote>
+                <div class="layui-card-body markdown-body single-content">
+                    <p>最近看到很多文章講到 bypass PHP disable functions 的文章，但其實這也不是什麼新的東西了</p>
+<p>很久以前就蒐集到過不少相關的文章，印象中最早從現在已經萬年維修的 wooyun drops 看到相關文章</p>
+<p>當然也已經有整理很齊全的<a href="https://github.com/l3m0n/Bypass_Disable_functions_Shell">github</a>，於似乎就順手整理相關資料順便重現一波</p>
+<h3 id="lab">Lab.</h3>
+<p>文章提到想要繞過 PHP 的 disable funtioncs 大概有四種方法</p>
+<ol>
+<li>可能有一些沒 disable 到的漏網之魚</li>
+<li>透過第三方程式弱點像是 ImageMagick 或 Shellshock 等等</li>
+<li>apache 啟用了 mod_cgi 並且允許覆蓋 .htaccess</li>
+<li>透過設定環境變數 LD_PRELOAD 來 hijack 系統層級函式</li>
+</ol>
+<p>這篇踩坑記主要在第四點上</p>
+<p>根據 <a href="https://wooyun.js.org/drops/%E5%88%A9%E7%94%A8%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8FLD_PRELOAD%E6%9D%A5%E7%BB%95%E8%BF%87php%20disable_function%E6%89%A7%E8%A1%8C%E7%B3%BB%E7%BB%9F%E5%91%BD%E4%BB%A4.html">wooyun drops</a> 的文章來看，中心思想就是使用 <code>putenv</code> 設定 <code>LD_PRELOAD</code></p>
+<p>然後使用 <code>mail</code> 函數會用到系統 <code>sendmail</code> binary 的特性導致 function hijack，進而</p>
+<p>繞過 PHP 的 disable functions，但缺點是你必須要覆蓋到會使用到的 function</p>
+<p>否則就無法觸發，而 freebuf 的這篇 <a href="https://www.freebuf.com/articles/web/192052.html">无需sendmail：巧用LD_PRELOAD突破disable_functions</a></p>
+<p>提到使用編譯器提供的 attribute 屬性來優先執行，這樣就可以無需覆蓋到任何函數一樣可以達到效果</p>
+<p>甚至系統最後沒有 <code>sendmail</code> 也無妨，在這一次重現中，主要測試了兩個運行方法，PHP CLI 與</p>
+<p>apache 的 php_mod，CLI 方面穩定觸發沒問題，但 apache 的測試一直不見效果，PoC 如下</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#f92672">&lt;?</span><span style="color:#a6e22e">php</span> 
+    <span style="color:#a6e22e">putenv</span>(<span style="color:#e6db74">&#39;LD_PRELOAD=PATH_TO_SO&#39;</span>);
+    <span style="color:#a6e22e">mail</span>(<span style="color:#e6db74">&#39;&#39;</span>, <span style="color:#e6db74">&#39;&#39;</span>, <span style="color:#e6db74">&#39;&#39;</span>, <span style="color:#e6db74">&#39;-bv&#39;</span>);
+<span style="color:#75715e">?&gt;</span><span style="color:#960050;background-color:#1e0010">
+</span></code></pre></div><p>其中 so 中覆蓋的函數會執行 <code>system(&quot;touch /tmp/HACKED&quot;)</code></p>
+<p>有鑑於此想要搞清楚原因為和，打算用 <code>strace</code> 來看看到底怎麼回事，PHP CLI 方面可以很清楚</p>
+<p>看到讀取 PHP 文件，覆蓋 <code>LD_PRELOAD</code> 與呼叫 <code>sendmail</code>，但 apache 有 prefork 不容易 <code>strace</code></p>
+<p>所以使用 <code>ps auxw | grep sbin/apache | awk '{print&quot;-p &quot; $2}' | xargs strace</code></p>
+<p>對所有的 apache process 使用 strace。</p>
+<p>後來發現的確有觸發到 <code>sendmail</code> 也確實執行了 <code>execve(&quot;touch /tmp/HACKED&quot;)</code>，但看了看我的</p>
+<p>tmp 目錄就是沒看見 HACKED 檔案，難道我的 PHP 壞掉了 ?!</p>
+<p>後來注意到 tmp 目錄下有類似這樣的路徑 <code>/tmp/systemd-prive-HASH-apche.service</code> 這樣的資料夾</p>
+<p>進去一看，果然 HACKED 檔案好好地躺在那，迅速查了一下發現這是 systemd 的 feature</p>
+<p>當透過 systemd 啟動的 service 用了 privateTmp 參數，該 service 的 tmp 資料夾就會用這種方式存在</p>
+<p>隔離每個 service 的 tmp 避免互相干擾</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>結論是，自己對 Linux 不熟才繞了這麼大一圈</p>
+<p>慚愧&hellip;慚愧&hellip;</p>
+<h3 id="references">References</h3>
+<ul>
+<li><a href="https://xz.aliyun.com/t/2368">php绕过大部分禁用函数限制执行命令</a></li>
+<li><a href="https://www.tr0y.wang/2018/04/18/PHPDisalbedfunc/index.html">PHP disable_functions Bypass 的方法探究</a></li>
+</ul>
+</div>
+            </div>
+        </div>
+
+        <div class="layui-col-md4 layui-col-sm12 layui-col-xs12">
+            
+            <div class="layui-card single-card">
+                <h2 class="single-title">Relevant Topics</h2>
+                
+                	
+                    <div style="margin-left: 10px;">
+                        <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                            <a href="/post/ld_preload/">
+                                <h3 class="">LD_PRELOAD</h3>
+                            </a>
+                            
+                            <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2017-04-14</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/misc/">
+            <span class="layui-badge " style="vertical-align: 2px;">misc</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/linux/">
+            <span class="layui-badge " style="vertical-align: 2px;">Linux</span>
+        </a>
+    
+        <a href="/tags/hook/">
+            <span class="layui-badge " style="vertical-align: 2px;">Hook</span>
+        </a>
+    
+        <a href="/tags/c/">
+            <span class="layui-badge " style="vertical-align: 2px;">c</span>
+        </a>
+    
+    
+</h3>
+                        </blockquote>
+                    </div>
+                	
+                
+                <br />
+            </div>
+            
+
+            <div class="layui-card single-card">
+                <h2 class="single-title">Recent Posts</h2>
+            
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/breakdown_mips_binary_exploit_with_qdb/">
+                        <h3 class="">Breakdown MIPS binary exploit with Qdb</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2021-02-01</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/qdb/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qdb</span>
+        </a>
+    
+        <a href="/tags/iot/">
+            <span class="layui-badge " style="vertical-align: 2px;">IoT</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/cve_2020_8962/">
+                        <h3 class="">How to reproduce CVE-2020-8962 with Qiling Framework</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2020-07-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/qiling/">
+            <span class="layui-badge " style="vertical-align: 2px;">Qiling</span>
+        </a>
+    
+        <a href="/tags/cve/">
+            <span class="layui-badge " style="vertical-align: 2px;">CVE</span>
+        </a>
+    
+        <a href="/tags/d-link/">
+            <span class="layui-badge " style="vertical-align: 2px;">D-Link</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/elf_symbol_resolving/">
+                        <h3 class="">ELF Symbol Resolving</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-12-12</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/python_pickle/">
+                        <h3 class="">Python Pickle</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-30</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/python/">
+            <span class="layui-badge " style="vertical-align: 2px;">Python</span>
+        </a>
+    
+        <a href="/tags/pickle/">
+            <span class="layui-badge " style="vertical-align: 2px;">Pickle</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+                <div style="margin-left: 10px;">
+                    <blockquote class="self-elem-quote " style="background-color:#FFFFFF;margin-top: 10px;">
+                    <a href="/post/lazy_binding_in_elf/">
+                        <h3 class="">Lazy binding in ELF</h3>
+                    </a>
+                    <h3 style="margin-top:10px; margin-bottom:10px"> 
+    <i class="layui-icon layui-icon-date" style="font-size: 28px; vertical-align: -2px;"></i>
+    <span>2019-05-15</span>
+
+    
+     
+    <i class="layui-icon layui-icon-list" style="font-size: 32px; vertical-align: -3px;"></i>
+    
+
+    
+        <a href="/categories/security/">
+            <span class="layui-badge " style="vertical-align: 2px;">security</span>
+        </a>
+    
+
+    
+    <i class="layui-icon layui-icon-tabs" style="font-size: 22px; vertical-align: 1px;margin-right:2px;"></i>
+    
+
+    
+        <a href="/tags/elf/">
+            <span class="layui-badge " style="vertical-align: 2px;">ELF</span>
+        </a>
+    
+    
+</h3>
+                    </blockquote>
+                </div>
+                
+            
+            <br />
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+        </div><footer>
+    
+    
+    <div class="layui-container">
+        <p class="copyright">&copy; All rights reserved. Powered by <a href='https://gohugo.io' style='color:#FFFFFF'>Hugo</a> and <a href='https://github.com/ertuil/erblog' style='color:#FFFFFF'>Erblog</a>.</p>
+    </div>
+</footer>
+</body>
+</html>
