@@ -2,32 +2,8 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://ucgjhe.github.io/post/breakdown_mips_binary_exploit_with_qdb/</loc>
-    <lastmod>2021-02-01T01:10:25+08:00</lastmod>
-  </url><url>
     <loc>https://ucgjhe.github.io/categories/</loc>
-    <lastmod>2021-02-01T01:10:25+08:00</lastmod>
-  </url><url>
-    <loc>https://ucgjhe.github.io/tags/iot/</loc>
-    <lastmod>2021-02-01T01:10:25+08:00</lastmod>
-  </url><url>
-    <loc>https://ucgjhe.github.io/</loc>
-    <lastmod>2021-02-01T01:10:25+08:00</lastmod>
-  </url><url>
-    <loc>https://ucgjhe.github.io/post/</loc>
-    <lastmod>2021-02-01T01:10:25+08:00</lastmod>
-  </url><url>
-    <loc>https://ucgjhe.github.io/tags/qdb/</loc>
-    <lastmod>2021-02-01T01:10:25+08:00</lastmod>
-  </url><url>
-    <loc>https://ucgjhe.github.io/tags/qiling/</loc>
-    <lastmod>2021-02-01T01:10:25+08:00</lastmod>
-  </url><url>
-    <loc>https://ucgjhe.github.io/categories/security/</loc>
-    <lastmod>2021-02-01T01:10:25+08:00</lastmod>
-  </url><url>
-    <loc>https://ucgjhe.github.io/tags/</loc>
-    <lastmod>2021-02-01T01:10:25+08:00</lastmod>
+    <lastmod>2020-07-30T10:25:15+08:00</lastmod>
   </url><url>
     <loc>https://ucgjhe.github.io/tags/cve/</loc>
     <lastmod>2020-07-30T10:25:15+08:00</lastmod>
@@ -36,6 +12,21 @@
     <lastmod>2020-07-30T10:25:15+08:00</lastmod>
   </url><url>
     <loc>https://ucgjhe.github.io/post/cve_2020_8962/</loc>
+    <lastmod>2020-07-30T10:25:15+08:00</lastmod>
+  </url><url>
+    <loc>https://ucgjhe.github.io/</loc>
+    <lastmod>2020-07-30T10:25:15+08:00</lastmod>
+  </url><url>
+    <loc>https://ucgjhe.github.io/post/</loc>
+    <lastmod>2020-07-30T10:25:15+08:00</lastmod>
+  </url><url>
+    <loc>https://ucgjhe.github.io/tags/qiling/</loc>
+    <lastmod>2020-07-30T10:25:15+08:00</lastmod>
+  </url><url>
+    <loc>https://ucgjhe.github.io/categories/security/</loc>
+    <lastmod>2020-07-30T10:25:15+08:00</lastmod>
+  </url><url>
+    <loc>https://ucgjhe.github.io/tags/</loc>
     <lastmod>2020-07-30T10:25:15+08:00</lastmod>
   </url><url>
     <loc>https://ucgjhe.github.io/tags/elf/</loc>
